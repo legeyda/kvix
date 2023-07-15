@@ -12,6 +12,7 @@ class ItemAlt:
 		raise NotImplementedError()
 
 class Item:
+	priority = Propty(default_supplier=lambda: 0)
 	alts = Propty(list, type=list[ItemAlt], writeable=False)
 
 class ItemSource:
@@ -27,10 +28,6 @@ class Context:
 	def quit(self) -> None:
 		raise NotImplementedError()
 
-class Plugin:
-	context: Propty[Context] = Propty()
-	def add_action_types(self): ...
-	def add_actions(self): ...
 
 
 
@@ -142,3 +139,13 @@ class DialogBuilder:
 	def save(self, value: Any) -> Any | None:
 		for func in self._on_save: value = func(value)
 		return value
+
+
+
+
+
+
+class Plugin:
+	def __init__(self, context: Context): ...
+	def get_action_types(self) -> list[ActionType]: ...
+	def get_actions(self) -> list[Action]: ...

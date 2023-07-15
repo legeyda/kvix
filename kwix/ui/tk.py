@@ -182,7 +182,7 @@ class Selector(ModalWindow, BaseSelector):
 			x: int = int((int(self._result_listbox.winfo_rootx()) + int(self._result_listbox.winfo_width())/3))
 
 			selected_index: int | None = self._get_selected_index()
-			if selected_index:
+			if isinstance(selected_index, int):
 				coords: tuple[int, int, int, int] = self._result_listbox.bbox(selected_index)
 				y: int = int(self._result_listbox.winfo_rooty() + (coords[1] + coords[3]/2))
 			else:

@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 import kwix
+from kwix import ActionType
 from kwix.impl import BaseItem, BaseItemAlt, BaseAction, BaseActionType, BasePlugin, FuncItemSource
 from kwix.l10n import _
 from kwix.util import query_match
@@ -11,12 +12,6 @@ from kwix.util import query_match
 add_action_text = _('Add Action').setup(ru_RU='Добавить действие', de_DE='Aktion hinzufuegen')
 select_action_type_text = _('Select Action Type').setup(ru_RU='Выбор типа действия', de_DE='Aktionstyp auswählen')
 select_text = _('Select').setup(ru_RU='Выбрать', de_DE='Auswählen')
-
-class ActionType(BaseActionType):
-	def __init__(self, context: kwix.Context): 
-		BaseActionType.__init__(self, context, 'add-action', str(add_action_text))
-	def create_default_action(self, title: str, description: str | None = None) -> Action:
-		return Action(self, title, description)
 
 class Action(BaseAction):
 	def _run(self):
@@ -43,11 +38,7 @@ class Action(BaseAction):
 		selector.go()
 
 class Plugin(BasePlugin):
-	def add_action_types(self):
-		self.action_type = ActionType(self.context)
-		self.context.action_registry.add_action_type(self.action_type)
-
-	def add_actions(self):
-		def create_default_actions() -> list[Action]:
-			return [ self.action_type.create_default_action(str(add_action_text) + '...') ]
-		self.add_default_actions(self.action_type.id, create_default_actions)
+	def _create_single_action_type(self) -> ActionType:
+		return BaseActionType(self.context, 'add-action', str(add_action_text), action_factory=Action)
+	def get_actions(self) -> list[Action]:
+		return [Action(self._single_action_type, str(add_action_text) + '...')]

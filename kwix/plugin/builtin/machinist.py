@@ -73,6 +73,5 @@ class Machinist(BaseMachinist):
 
 
 class Plugin(BasePlugin):
-	def add_action_types(self):
-		self.action_type = MachinistActionType(self.context)
-		self.context.action_registry.add_action_type(self.action_type)
+	def _create_single_action_type(self) -> ActionType:
+		return MachinistActionType(self.context)

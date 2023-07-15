@@ -74,10 +74,6 @@ def get_cache_dir() -> pathlib.Path:
 		
 
 
-def is_dict(obj):
-	return isinstance(obj, (dict, UserDict))
-
-
 
 key_mappings: list[dict[str, str]]=[]
 key_sets: list[str] = [
@@ -90,12 +86,15 @@ for key_set in key_sets:
 		key_mappings.append(dict(zip(list(key_set), list(other_key_set))))
 		
 
-def query_match(query: str, *contents: str):
+def query_match(query: str, *contents: str) -> bool:
 	if not query:
 		return True
-	for item in contents:
-		if item and query.lower() in item.lower():
-			return True
+	for word in query.split():
+		if not word:
+			continue
+		for item in contents:
+			if word.lower() in item.lower():
+				return True
 	return False
 
 

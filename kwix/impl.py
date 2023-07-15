@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 from typing import Any, Callable, Sequence, cast
+from types import ModuleType
+from inspect import isclass
 
 import kwix
-from kwix import Action, ActionType, Item
+from kwix import Action, ActionType, Item, Context
 from kwix.l10n import _
 from kwix.util import Propty, query_match
 from kwix.stor import Stor
@@ -49,17 +51,6 @@ class EmptyItemSource(kwix.ItemSource):
 
 
 
-class BasePlugin(kwix.Plugin):
-	def __init__(self, context: kwix.Context):
-		self.context = context
-
-	def add_default_actions(self, action_type_id: str, supplier: Callable[[], Sequence[Action]]):
-		action_type_ids: set[str] = set([action.action_type.id for action in self.context.action_registry.actions])
-		if action_type_id not in action_type_ids:
-			self.context.action_registry.actions += supplier()
-
-
-
 
 
 class BaseSelector(kwix.Selector):
@@ -73,13 +64,14 @@ class BaseSelector(kwix.Selector):
 
 	
 class BaseActionType(ActionType):
-	def __init__(self, context: kwix.Context, id: str, title: str):
+	def __init__(self, context: kwix.Context, id: str, title: str, action_factory: Callable[[ActionType, str, str], Action] | None = None):
 		self.context = context
 		self.id = id
 		self.title = title
+		self.action_factory = action_factory
 
 	def create_default_action(self, title: str, description: str | None = None) -> Action:
-		raise NotImplementedError()
+		return self.action_factory(self, title, description)
 
 	def action_from_config(self, value: Any) -> Action:
 		dic = self._assert_config_valid(value)
@@ -169,8 +161,7 @@ class BaseActionRegistry(kwix.ActionRegistry):
 			raise RuntimeError('"type" expected')
 		type_id = value['type']
 		if type(type_id) != str:
-			raise RuntimeError(
-				'"type" expected to be str, got ' + type(type_id))
+			raise RuntimeError('"type" expected to be str, got ' + type(type_id))
 		if type_id not in self.action_types:
 			raise RuntimeError('uknown action type id=' + type_id)
 		action_type: ActionType = self.action_types[type_id]
@@ -184,3 +175,36 @@ class BaseActionRegistry(kwix.ActionRegistry):
 		return result
 
 
+
+
+
+
+
+class BasePlugin(kwix.Plugin):
+	def __init__(self, context: kwix.Context):
+		self.context = context
+	def get_action_types(self) -> list[ActionType]:
+		self._single_action_type = self._create_single_action_type()
+		return [self._single_action_type]
+	def _create_single_action_type(self) -> ActionType:
+		raise NotImplementedError()
+	def get_actions(self) -> list[Action]:
+		return []
+
+class FromModule(BasePlugin):
+	def __init__(self, context: Context, module: ModuleType):
+		BasePlugin.__init__(self, context)
+		self._wrap = self._create_plugin(module)
+	def _create_plugin(self, module: ModuleType) -> kwix.Plugin | None:
+		if not hasattr(module, 'Plugin'):
+			return None
+		PluginClass = getattr(module, 'Plugin')
+		if not isclass(PluginClass):
+			return None
+		if not issubclass(PluginClass, kwix.Plugin):
+			return None
+		return PluginClass(self.context)
+	def get_action_types(self) -> list[ActionType]:
+		return self._wrap.get_action_types() if self._wrap else []
+	def get_actions(self) -> list[Action]:
+		return self._wrap.get_actions() if self._wrap else []

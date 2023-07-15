@@ -1,5 +1,5 @@
 
-from typing import Any
+from typing import Any, Sequence
 
 import pynput
 
@@ -13,10 +13,11 @@ from kwix.impl import BaseItem, BaseItemAlt, FuncItemSource, BaseActionRegistry
 from kwix.l10n import _
 from kwix.stor import YamlFile
 from kwix.util import get_config_dir, get_data_dir
+from kwix.plugin import Plugin as PanPlugin
 
 activate_action_text = _('Activate').setup(ru_RU='Выпуолнить', de_DE='Aktivieren')
-edit_action_text = _('Edit Action: {{action_title}} ({{action_type_title}})').setup(ru_RU='Редактироваnь действие: {{action_title}} ({{action_type_title}})', de_DE='Aktion Bearbeiten: {{action_title}} ({{action_type_title}})')
-delete_action_text = _('Remove Action: {{action_title}} ({{action_type_title}})').setup(ru_RU='Удалить действие: {{action_title}} ({{action_type_title}})', de_DE='Aktion Löschen: {{action_title}} ({{action_type_title}})')
+edit_action_text = _('Edit Action: {{action_title}} ({{action_type_title}})').setup(ru_RU='Редактировать действие "{{action_title}}" ({{action_type_title}})', de_DE='Aktion Bearbeiten: "{{action_title}}" ({{action_type_title}})')
+delete_action_text = _('Remove Action: {{action_title}} ({{action_type_title}})').setup(ru_RU='Удалить действие "{{action_title}}" ({{action_type_title}})', de_DE='Aktion Löschen "{{action_title}}" ({{action_type_title}})')
 
 
 
@@ -29,8 +30,9 @@ class App(Context):
 	def run(self):
 		self.init_conf()
 		self.init_action_stor()
+		#self.init_known_action_type_id_stor()
 		self.init_action_registry()
-		self.init_plugins()
+		self.load_actions()
 		self.init_tray()
 
 	def init_conf(self):
@@ -51,12 +53,41 @@ class App(Context):
 	def create_action_registry(self) -> ActionRegistry:
 		return BaseActionRegistry(self.action_stor)
 	
-	def init_plugins(self):
-		dispatcher = kwix.plugin.Dispatcher(self)
-		dispatcher.add_action_types()
+	def init_known_action_type_id_stor(self):
+		self._known_action_type_id_stor = self.create_known_action_type_id_stor()
+		self._known_action_type_id_stor.data = self._known_action_type_id_stor.data or []
+	def create_known_action_type_id_stor(self):
+		return YamlFile(get_config_dir().joinpath('known_action_type_ids.yaml'))
+
+	def load_actions(self):
+		# load action types from plugins
+		pan_plugin = PanPlugin(self)
+		for action_type in pan_plugin.get_action_types():
+			self._action_registry.add_action_type(action_type)
+
+		# load action from config
 		self.action_registry.load()
-		dispatcher.add_actions()
+
+		# load known action type ids
+		stor = YamlFile(get_config_dir().joinpath('known_action_type_ids.yaml'))
+		stor.load()
+
+		known_action_types_ids = stor.data or []
+		if not isinstance(known_action_types_ids, Sequence):
+			raise RuntimeError('known_action_type_ids.yaml expected to be array of string')
+		known_action_types_ids = set(known_action_types_ids)
+
+		# from plugins load actions which are of unknown action types
+		for action in pan_plugin.get_actions():
+			if not action.action_type.id in known_action_types_ids:
+				self.action_registry.actions.append(action)
+		self.action_registry.save()
+
+		# save known action type id cache
+		stor.data = set([id for id in self._action_registry.action_types])
+		stor.save()
 	
+
 	def init_tray(self):
 		self.tray = kwix.ui.tray.TrayIcon()
 		self.tray.on_show = self.activate_action_selector
