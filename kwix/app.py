@@ -71,7 +71,8 @@ class App(Context):
 
 		# load known action type ids
 		self._cache_stor.load()
-		cache = ensure_type(self._cache_stor.data or {}, dict)
+		self._cache_stor.data = self._cache_stor.data or {}
+		cache = ensure_type(self._cache_stor.data, dict)
 		known_action_types_ids = set(ensure_type(cache.get('known_action_type_ids', []), list))
 
 		# from plugins load actions which are of unknown action types

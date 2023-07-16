@@ -4,7 +4,7 @@ from kwix.impl import BaseAction, BaseActionType, BasePlugin
 from kwix.l10n import _
 
 quit_title_text = _('Quit Kwix').setup(ru_RU='Выключить Kwix', de_DE='Kwix ausschalten')
-quit_description = ' | '.join([quit_title_text['en_EN']] + quit_title_text.values())
+quit_description = ' | '.join([quit_title_text.default] + list(quit_title_text.l10ns.values()))
 
 
 class QuitAction(BaseAction):

@@ -11,24 +11,21 @@ def get_current_locale() -> str:
 
 class Text:
 	def __init__(self, key: str, default: str | None = None, **l10ns: str):
-		self._key: str = key
-		self._default: str = default or key
-		self._l10ns: dict[str, str] = l10ns
+		self.key = key
+		self.default = default or key
+		self.l10ns = l10ns
 
 	def setup(self, default: str | None = None, **kwargs: str) -> Text:
-		self._default = default or self._key
-		self._l10ns.update(kwargs)
+		self.default = default or self.key
+		self.l10ns.update(kwargs)
 		return self
 	
 	def __str__(self) -> str:
 		return self[get_current_locale()]
 		
 	def __getitem__(self, locale: str) -> str:
-		return self._l10ns.get(locale, self._default)
-	
-	def values(self) -> list[str]:
-		return list(self._l10ns.values())
-		
+		return self.l10ns.get(locale, self.default)
+			
 
 
 
@@ -59,7 +56,7 @@ def scope(key: str) -> Scope:
 	return ensure_key(_scopes, key, lambda: Scope(key))
 
 
-def test():
-	from kwix.l10n import _, gettext, scope
+def _test():
+	from kwix.l10n import _
 	txt = _('Hello').setup(ru_RU='Привет', de_DE='Hallo')
 	print(txt)
