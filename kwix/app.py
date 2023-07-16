@@ -12,7 +12,7 @@ from kwix.conf import Conf, StorConf
 from kwix.impl import BaseItem, BaseItemAlt, FuncItemSource, BaseActionRegistry
 from kwix.l10n import _
 from kwix.stor import YamlFile
-from kwix.util import get_config_dir, get_data_dir
+from kwix.util import get_config_dir, get_data_dir, get_cache_dir, ensure_key, ensure_type, apply_template
 from kwix.plugin import Plugin as PanPlugin
 
 activate_action_text = _('Activate').setup(ru_RU='Выпуолнить', de_DE='Aktivieren')
@@ -30,7 +30,7 @@ class App(Context):
 	def run(self):
 		self.init_conf()
 		self.init_action_stor()
-		#self.init_known_action_type_id_stor()
+		self.init_cache_stor()
 		self.init_action_registry()
 		self.load_actions()
 		self.init_tray()
@@ -47,17 +47,18 @@ class App(Context):
 	def create_action_stor(self):
 		return YamlFile(get_data_dir().joinpath('actions.yaml'))
 
+	def init_cache_stor(self):
+		self._cache_stor = self.create_cache_stor()
+		self._cache_stor.data = self._cache_stor.data or {}
+	def create_cache_stor(self):
+		return YamlFile(get_cache_dir().joinpath('cache.yaml'))
+	
 	def init_action_registry(self):
 		self._action_registry = self.create_action_registry()
 		self._action_registry.action_types
 	def create_action_registry(self) -> ActionRegistry:
 		return BaseActionRegistry(self.action_stor)
 	
-	def init_known_action_type_id_stor(self):
-		self._known_action_type_id_stor = self.create_known_action_type_id_stor()
-		self._known_action_type_id_stor.data = self._known_action_type_id_stor.data or []
-	def create_known_action_type_id_stor(self):
-		return YamlFile(get_config_dir().joinpath('known_action_type_ids.yaml'))
 
 	def load_actions(self):
 		# load action types from plugins
@@ -69,13 +70,9 @@ class App(Context):
 		self.action_registry.load()
 
 		# load known action type ids
-		stor = YamlFile(get_config_dir().joinpath('known_action_type_ids.yaml'))
-		stor.load()
-
-		known_action_types_ids = stor.data or []
-		if not isinstance(known_action_types_ids, Sequence):
-			raise RuntimeError('known_action_type_ids.yaml expected to be array of string')
-		known_action_types_ids = set(known_action_types_ids)
+		self._cache_stor.load()
+		cache = ensure_type(self._cache_stor.data or {}, dict)
+		known_action_types_ids = set(ensure_type(cache.get('known_action_type_ids', []), list))
 
 		# from plugins load actions which are of unknown action types
 		for action in pan_plugin.get_actions():
@@ -84,8 +81,8 @@ class App(Context):
 		self.action_registry.save()
 
 		# save known action type id cache
-		stor.data = set([id for id in self._action_registry.action_types])
-		stor.save()
+		cache['known_action_type_ids'] = list(set([id for id in self._action_registry.action_types]))
+		self._cache_stor.save()
 	
 
 	def init_tray(self):
@@ -119,10 +116,10 @@ class App(Context):
 					alts = list(item.alts)
 					def edit_this_action(action: Action = action):
 						edit_action(action)
-					alts.append(BaseItemAlt(edit_action_text.apply(action_title=action.title, action_type_title=action.action_type.title), edit_this_action))
+					alts.append(BaseItemAlt(apply_template(str(edit_action_text), action_title=action.title, action_type_title=action.action_type.title), edit_this_action))
 					def delete_this_action(action: Action = action):
 						delete_action(action)
-					alts.append(BaseItemAlt(delete_action_text.apply(action_title=action.title, action_type_title=action.action_type.title), delete_this_action))
+					alts.append(BaseItemAlt(apply_template(str(delete_action_text), action_title=action.title, action_type_title=action.action_type.title), delete_this_action))
 					result.append(BaseItem(str(item), alts))
 			return result
 		self.action_selector.item_source = FuncItemSource(search)

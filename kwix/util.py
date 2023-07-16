@@ -8,7 +8,8 @@ import os
 import collections
 import yaml
 from collections import UserDict
-from typing import Any, cast, Callable, TypeVar, Type, Generic
+from typing import Any, cast, Callable, TypeVar, Type, Generic, TypeAlias
+from types import UnionType
 
 class ThreadRouter:
 	def __init__(self, target_thread: threading.Thread = threading.current_thread()):
@@ -106,6 +107,7 @@ class Propty(Generic[T]):
 		  on_change: str | bool | Callable[[Any, T], None] = False,
 		  private_name: str | None = None,
 		  type: Type[T] | None = None,
+		  type_check: bool = False,
 		  writeable: bool = True,
 		  required: bool = False,
 		  getter: Callable[[Any], T] | None = None,
@@ -117,12 +119,16 @@ class Propty(Generic[T]):
 		self._default_supplier = default_supplier
 		self._on_change = on_change
 		self._private_name = cast(str, private_name)
-		self._type = type,
+		self._type = type
+		if type_check and not type:
+			raise RuntimeError('Propty: type_check and not type')
+		self._type_check = type_check
 		self._writeable = writeable
 		self._required = required
 		self._getter = getter or self._builtin_getter
 		self._setter = setter or self._builtin_setter
 	def __set_name__(self, owner: Any, name: str):
+		self._name = name
 		if self._on_change is True:
 			self._on_change = '_on_change_' + name
 		if not self._private_name:
@@ -132,6 +138,7 @@ class Propty(Generic[T]):
 			raise AttributeError("Propty is for instances only")
 		if not self._writeable:
 			raise AttributeError('property for ' + self._private_name + ' is not writeable')
+		self._assert_type(value)
 		if self._on_change:
 			old_value: T = self._get_silent(obj, True)
 			if old_value is not value:
@@ -139,6 +146,9 @@ class Propty(Generic[T]):
 			self._setter(obj, value)
 		else:
 			self._setter(obj, value)
+	def _assert_type(self, value: T):
+		if self._type_check and not isinstance(value, self._type):
+			raise AttributeError('property ' + self._name + 'exp')
 	def _call_on_change(self, obj: Any, value: T) -> None:
 		if False is self._on_change:
 			return
@@ -156,7 +166,10 @@ class Propty(Generic[T]):
 	def _builtin_setter(self, obj: Any, value: T) -> None:
 		setattr(obj, self._private_name, value)
 	def __get__(self, obj: Any, objtype: Any = None) -> T:
-		result = self._builtin_getter(obj)
+		if not obj:
+			raise AttributeError("Propty is for instances only")
+		result = self._getter(obj)
+		self._assert_type(result)
 		setattr(obj, self._private_name, result)
 		return result
 	def _builtin_getter(self, obj: Any) -> T:
@@ -171,3 +184,29 @@ class Propty(Generic[T]):
 				raise RuntimeError('property is required')
 			return cast(T, self._default_supplier() if self._default_supplier else None)
 		return getattr(obj, self._private_name)
+
+
+
+TypeKey = TypeVar('TypeKey')
+TypeValue = TypeVar('TypeValue')
+def ensure_key(dest: dict[TypeKey, TypeValue], key: TypeKey, supplier: Callable[[], TypeValue]) -> TypeValue:
+	if key in dest:
+		return dest[key]
+	else:
+		value = supplier()
+		dest[key] = value
+		return value
+
+
+ClassInfo: TypeAlias = type | UnionType | tuple['ClassInfo', ...]
+def ensure_type(value: Any | None, type_or_tuple: ClassInfo):
+	if not isinstance(value, type_or_tuple):
+		raise RuntimeError('value expected to be %s' % type_or_tuple)
+	return value
+
+
+def apply_template(template: str, **values: str) -> str:
+	result = str(template)
+	for key, value in values.items():
+		result = result.replace('{{' + str(key) + '}}', str(value))
+	return result

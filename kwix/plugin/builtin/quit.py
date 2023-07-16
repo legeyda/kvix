@@ -4,7 +4,7 @@ from kwix.impl import BaseAction, BaseActionType, BasePlugin
 from kwix.l10n import _
 
 quit_title_text = _('Quit Kwix').setup(ru_RU='Выключить Kwix', de_DE='Kwix ausschalten')
-quit_description_text = quit_title_text
+quit_description = ' | '.join([quit_title_text['en_EN']] + quit_title_text.values())
 
 
 class QuitAction(BaseAction):
@@ -14,5 +14,5 @@ class QuitAction(BaseAction):
 class Plugin(BasePlugin):
 	def _create_single_action_type(self) -> ActionType:
 		return BaseActionType(self.context, 'kwix.plugin.builtin.quit', str(quit_title_text), action_factory=QuitAction)
-	def _create_single_action(self) -> Action:
-		return QuitAction(self._single_action_type, str(quit_title_text), str(quit_description_text))
+	def get_actions(self) -> list[Action]:
+		return [QuitAction(self._single_action_type, str(quit_title_text), str(quit_description))]

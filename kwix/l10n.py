@@ -1,17 +1,8 @@
 from __future__ import annotations
 
 import locale
-from typing import Callable, TypeVar
 
-TypeKey = TypeVar('TypeKey')
-TypeValue = TypeVar('TypeValue')
-def setdefault(dest: dict[TypeKey, TypeValue], key: TypeKey, supplier: Callable[[], TypeValue]) -> TypeValue:
-	if key in dest:
-		return dest[key]
-	else:
-		value = supplier()
-		dest[key] = value
-		return value
+from kwix.util import ensure_key
 
 
 def get_current_locale() -> str:
@@ -24,19 +15,22 @@ class Text:
 		self._default: str = default or key
 		self._l10ns: dict[str, str] = l10ns
 
-	def __str__(self) -> str:
-		return self._l10ns.get(get_current_locale(), self._default)
-
 	def setup(self, default: str | None = None, **kwargs: str) -> Text:
 		self._default = default or self._key
 		self._l10ns.update(kwargs)
 		return self
 	
-	def apply(self, **values: str) -> str:
-		result = str(self)
-		for key, value in values.items():
-			result = result.replace('{{' + str(key) + '}}', str(value))
-		return result
+	def __str__(self) -> str:
+		return self[get_current_locale()]
+		
+	def __getitem__(self, locale: str) -> str:
+		return self._l10ns.get(locale, self._default)
+	
+	def values(self) -> list[str]:
+		return list(self._l10ns.values())
+		
+
+
 
 
 
@@ -44,7 +38,7 @@ _texts: dict[str, Text] = {}
 
 
 def gettext(key: str, default: str | None = None, **l10ns: str) -> Text:
-	return setdefault(_texts, key, lambda: Text(key, default, **l10ns))
+	return ensure_key(_texts, key, lambda: Text(key, default, **l10ns))
 
 
 _ = gettext
@@ -62,7 +56,7 @@ _scopes: dict[str, Scope] = {}
 
 
 def scope(key: str) -> Scope:
-	return setdefault(_scopes, key, lambda: Scope(key))
+	return ensure_key(_scopes, key, lambda: Scope(key))
 
 
 def test():
