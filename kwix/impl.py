@@ -117,7 +117,7 @@ class BaseAction(Action):
 	def _match(self, query: str) -> bool:
 		return query_match(query or '', self.title, self.description)
 
-	def _create_default_items(self) -> list[BaseItem]:
+	def _create_default_items(self) -> list[Item]:
 		return [BaseItem(self.title, [BaseItemAlt(execute_text, self._run)])]
 
 	def search(self, query: str) -> list[kwix.Item]:

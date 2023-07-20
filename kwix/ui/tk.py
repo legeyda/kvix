@@ -5,11 +5,10 @@ from typing import Callable, Any, cast, Sequence
 import pkg_resources
 from PIL import Image, ImageTk
 
-import time
 import kwix.impl
 import kwix
 import kwix.ui
-from kwix import DialogBuilder, ItemAlt, Item
+from kwix import ItemAlt, Item
 import kwix.ui.tk
 from kwix.util import ThreadRouter
 from kwix import Item, ItemSource
@@ -37,13 +36,19 @@ class Ui(kwix.Ui):
 	def run(self):
 		self._thread_router = ThreadRouter()
 		run_periodically(self.root, 10, self._thread_router.process)
+		self.root.after(0, self.on_start)
 		self.root.mainloop()
+	def _exec_in_mainloop(self, func: Callable[[], None]) -> None:
+		self._thread_router.exec(func)
 	def selector(self) -> kwix.Selector:
 		return Selector(self)
-	def dialog(self, create_dialog: Callable[[DialogBuilder], None]) -> None:
+	def dialog(self, create_dialog: Callable[[kwix.DialogBuilder], None]) -> None:
 		return Dialog(self, create_dialog)
 	def destroy(self):
-		self._thread_router.exec(self.root.destroy)
+		self._exec_in_mainloop(self._do_destroy)
+	def _do_destroy(self):
+		self.root.destroy()
+		
 
 
 class ModalWindow:
@@ -59,18 +64,25 @@ class ModalWindow:
 		self._window.geometry('500x200')
 		self._window.columnconfigure(0, weight=1)
 		self._window.rowconfigure(0, weight=1)
-		self._window.bind('<Escape>', cast(Any, self.hide))
+		self._window.bind('<Escape>', lambda _: self.hide())
 		self._window.withdraw()
 	def show(self):
-		self.parent._thread_router.exec(self._do_show)
+		self.parent._exec_in_mainloop(self._do_show)
 	def _do_show(self):
-		self._window.title(self.title)
 		self._window.deiconify()
-		#self._window.focus_set()
-	def hide(self, *args):
-		self.parent._thread_router.exec(self._window.withdraw)
+		self._window.title(self.title) # todo: _tkinter.TclError: bad window path name ".!toplevel"
+		self._window.focus_set()
+	def hide(self) -> None:
+		self.parent._exec_in_mainloop(self._window.withdraw)
 	def destroy(self):
-		self._window.destroy()
+		if not self._window:
+			return
+		def f():
+			if not self._window:
+				return
+			self._window.destroy()
+			self._window = None
+		self.parent._exec_in_mainloop(f)
 
 
 
@@ -215,7 +227,7 @@ class Selector(ModalWindow, BaseSelector):
 
 
 class Dialog(kwix.Dialog, ModalWindow):
-	def __init__(self, parent: Ui, create_dialog: Callable[[DialogBuilder], None]):
+	def __init__(self, parent: Ui, create_dialog: Callable[[kwix.DialogBuilder], None]):
 		ModalWindow.__init__(self, parent)
 		self.create_dialog = create_dialog
 		self._init_window()
@@ -232,7 +244,10 @@ class Dialog(kwix.Dialog, ModalWindow):
 
 		self.builder = DialogBuilder(data_frame)
 		self.create_dialog(self.builder)
-
+		children = data_frame.winfo_children()
+		if len(children) >= 2:
+			self._first_entry = children[1]
+		
 		control_frame = ttk.Frame(frame)
 		control_frame.rowconfigure(0, weight=1)
 		control_frame.columnconfigure(0, weight=1)
@@ -246,12 +261,18 @@ class Dialog(kwix.Dialog, ModalWindow):
 
 	def _ok_click(self, *args):
 		self.hide()
-		self._on_ok(self.builder.save(self._value))
-
-	def go(self, value: Any | None, on_ok: Callable[[Any], None] = lambda _: None) -> None:
-		self._value = value
-		self._on_ok = on_ok
-		self.builder.load(value)
+		self.value = self.builder.save(self.value)
+		self.on_ok()
+		if self.auto_destroy:
+			self.destroy()
+	def _cancel_click(self, *args):
+		self.hide()
+		self.on_cancel()
+		if self.auto_destroy:
+			self.destroy()
+	def go(self) -> None: # todo rename to "show"
+		self.builder.load(self.value)
+		self._first_entry.select_range(0, 'end')
 		self.show()
 	def destroy(self) -> None:
 		return ModalWindow.destroy(self)

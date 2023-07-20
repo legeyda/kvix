@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from kwix.conf import Conf
 from kwix.l10n import _
@@ -25,6 +25,7 @@ class Context:
 	conf: Propty[Conf] = Propty(writeable=False)
 	ui: Propty[Ui] = Propty(writeable=False)
 	action_registry: Propty[ActionRegistry] = Propty(writeable=False)
+	on_start = Propty(lambda: (lambda: None), type = Callable[[], None])
 	def quit(self) -> None:
 		raise NotImplementedError()
 
@@ -77,6 +78,7 @@ class ActionRegistry(ItemSource):
 
 
 class Ui:
+	on_start = Propty(lambda: lambda: None, type = Callable[[], None])
 	def run(self) -> None:
 		raise NotImplementedError()
 	def selector(self) -> Selector:
@@ -96,7 +98,11 @@ class Selector:
 	
 class Dialog:
 	title = Propty(lambda: 'kwix', type = str)
-	def go(self, value: Any | None, on_ok: Callable[[Any | None], None] = lambda x: None) -> None:
+	value = Propty(type = Any)
+	on_ok = Propty(lambda: (lambda: None), type = Callable[[], None])
+	on_cancel = Propty(lambda: (lambda: None), type = Callable[[], None])
+	auto_destroy = Propty(lambda: True)
+	def go(self) -> None:
 		raise NotImplementedError()
 	def destroy(self) -> None:
 		raise NotImplementedError()

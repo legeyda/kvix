@@ -1,25 +1,41 @@
 
-import threading
-import queue
 import logging
-import traceback
-import pathlib
 import os
-import collections
-import yaml
-from collections import UserDict
-from typing import Any, cast, Callable, TypeVar, Type, Generic, TypeAlias
+import pathlib
+import queue
+import threading
+import traceback
+from time import sleep
 from types import UnionType
+from typing import Any, Callable, Generic, Type, TypeAlias, TypeVar, cast
+
+import pyclip
+
+
+class CallableWrapper:
+	def __init__(self, func: Callable[[], None]):
+		self._func = func
+		self.ready = False
+	def __call__(self):
+		try:
+			self._func()
+		finally:
+			self.ready = True
+	def wait(self, sleep_seconds: float = 0.001):
+		while not self.ready:
+			sleep(sleep_seconds)
 
 class ThreadRouter:
 	def __init__(self, target_thread: threading.Thread = threading.current_thread()):
 		self._target_thread = target_thread
 		self._queue = queue.Queue()
-	def exec(self, action):
+	def exec(self, action: Callable[[], None]):
 		if threading.current_thread() == self._target_thread:
 			action()
 		else:
-			self._queue.put(action)
+			wrap = CallableWrapper(action)
+			self._queue.put(wrap)
+			wrap.wait()
 	def process(self):
 		if threading.current_thread() != self._target_thread:
 			raise RuntimeError('wrong thread')
@@ -210,3 +226,11 @@ def apply_template(template: str, **values: str) -> str:
 	for key, value in values.items():
 		result = result.replace('{{' + str(key) + '}}', str(value))
 	return result
+
+
+def paste_str() -> str:
+	try:
+		return pyclip.paste().decode('UTF-8')
+	except Exception as e:
+		print(e)
+	return ''

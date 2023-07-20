@@ -12,8 +12,10 @@ from kwix.conf import Conf, StorConf
 from kwix.impl import BaseItem, BaseItemAlt, FuncItemSource, BaseActionRegistry
 from kwix.l10n import _
 from kwix.stor import YamlFile
-from kwix.util import get_config_dir, get_data_dir, get_cache_dir, ensure_key, ensure_type, apply_template
+from kwix.util import get_config_dir, get_data_dir, get_cache_dir, ensure_type, apply_template
 from kwix.plugin import Plugin as PanPlugin
+from argparse import ArgumentParser
+from kwix.remote import Server, Client as RemoteClient
 
 activate_action_text = _('Activate').setup(ru_RU='Выпуолнить', de_DE='Aktivieren')
 edit_action_text = _('Edit Action: {{action_title}} ({{action_type_title}})').setup(ru_RU='Редактировать действие "{{action_title}}" ({{action_type_title}})', de_DE='Aktion Bearbeiten: "{{action_title}}" ({{action_type_title}})')
@@ -22,24 +24,30 @@ delete_action_text = _('Remove Action: {{action_title}} ({{action_type_title}})'
 
 
 
-
+def load_conf():
+	return StorConf(YamlFile(get_config_dir().joinpath('config.yaml')))
 
 class App(Context):
-	def __init__(self):
-		pass
+
+	
+	def __init__(self, conf: Conf | None = None):
+		self._conf = conf
+
 	def run(self):
 		self.init_conf()
 		self.init_action_stor()
 		self.init_cache_stor()
 		self.init_action_registry()
 		self.load_actions()
+		self.start_async_server()
 		self.init_tray()
 
 	def init_conf(self):
-		self._conf = self.create_conf()
+		if not self._conf:
+			self._conf = self.create_conf()
 	def create_conf(self) -> Conf:
-		self.conf_stor = YamlFile(get_config_dir().joinpath('config.yaml'))
-		return StorConf(self.conf_stor)
+		return load_conf()
+		
 	
 	def init_action_stor(self):
 		self.action_stor = self.create_action_stor()
@@ -85,6 +93,10 @@ class App(Context):
 		cache['known_action_type_ids'] = list(set([id for id in self._action_registry.action_types]))
 		self._cache_stor.save()
 	
+	def start_async_server(self):
+		self._server = Server(self.conf, self.activate_action_selector)
+		self._server.start()
+
 
 	def init_tray(self):
 		self.tray = kwix.ui.tray.TrayIcon()
@@ -96,6 +108,7 @@ class App(Context):
 		self._ui = kwix.ui.tk.Ui()
 		self.init_action_selector()
 		self.register_global_hotkeys()
+		self._ui.on_start = self.on_start
 		self.ui.run()
 		
 	def init_action_selector(self):
@@ -103,10 +116,9 @@ class App(Context):
 		self.action_selector.title = 'Kwix!!!'
 		def edit_action(action: Action) -> None:
 			dialog = action.action_type.context.ui.dialog(action.action_type.create_editor)
-			def on_dialog_ok(_: Any | None) -> None:
-				dialog.destroy()
-				self.action_registry.save()
-			dialog.go(action, on_dialog_ok)
+			dialog.value = action
+			dialog.on_ok = lambda: self.action_registry.save()
+			dialog.go()
 		def delete_action(action: Action) -> None:
 			self.action_registry.actions.remove(action)
 			self.action_registry.save()
@@ -131,16 +143,34 @@ class App(Context):
 	def quit(self):
 		self.conf.save()
 		self.action_registry.save()
+		self._server.stop()
 		self.ui.destroy()
 		self.tray.stop()
 		
 		#self.server.stop()
 
 	def register_global_hotkeys(self):
-		activate_window_hotkey = self.conf.item('activate_window_hotkey').setup(title = "Activate Window", default = '<ctrl>+;', mapping=str)
+		activate_window_hotkey = self.conf.item('activate_window_hotkey').setup(title = "Activate Window", default = '<ctrl>+;', read_mapping=str)
 		pynput.keyboard.GlobalHotKeys({activate_window_hotkey.read(): self.activate_action_selector}).start()
 
 
 
-def main():
-	App().run()
+def main(*args: str):
+	parser = ArgumentParser(prog='kwix')
+	parser.add_argument('-a', '--activate', action='store_true', help='show action selector immediately after start')
+	parsed_args = parser.parse_args(args)
+
+	conf = load_conf()
+	remote_client = RemoteClient(conf)
+	if remote_client.ping():
+		if parsed_args.activate:
+			remote_client.activate()
+	else:
+		app = App(conf)
+		if parsed_args.activate:
+			app.on_start = app.activate_action_selector
+		app.run()
+		
+# def main(*args: str):
+# 	App().run()
+	

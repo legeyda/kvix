@@ -20,12 +20,13 @@ class Action(BaseAction):
 		def execute(action_type: ActionType) -> None:
 			selector.destroy()
 			dialog = self.action_type.context.ui.dialog(action_type.create_editor)
-			def on_dialog_ready(value: Any | None) -> None:
-				dialog.destroy()
-				if isinstance(value, kwix.Action):
-					self.action_type.context.action_registry.actions.append(value)
+			dialog.auto_destroy = True
+			def on_ok() -> None:
+				if isinstance(dialog.value, kwix.Action):
+					self.action_type.context.action_registry.actions.append(dialog.value)
 					self.action_type.context.action_registry.save()
-			dialog.go(None, on_dialog_ready)		
+			dialog.on_ok = on_ok
+			dialog.go()
 		def search(query: str) -> list[kwix.Item]:
 			result: list[kwix.Item] = []
 			for action_type in self.action_type.context.action_registry.action_types.values():
