@@ -39,7 +39,6 @@ class App(Context):
 		self.init_cache_stor()
 		self.init_action_registry()
 		self.load_actions()
-		self.start_async_server()
 		self.init_tray()
 
 	def init_conf(self):
@@ -92,11 +91,6 @@ class App(Context):
 		# save known action type id cache
 		cache['known_action_type_ids'] = list(set([id for id in self._action_registry.action_types]))
 		self._cache_stor.save()
-	
-	def start_async_server(self):
-		self._server = Server(self.conf, self.activate_action_selector)
-		self._server.start()
-
 
 	def init_tray(self):
 		self.tray = kwix.ui.tray.TrayIcon()
@@ -143,7 +137,6 @@ class App(Context):
 	def quit(self):
 		self.conf.save()
 		self.action_registry.save()
-		self._server.stop()
 		self.ui.destroy()
 		self.tray.stop()
 		
@@ -169,7 +162,12 @@ def main(*args: str):
 		app = App(conf)
 		if parsed_args.activate:
 			app.on_start = app.activate_action_selector
-		app.run()
+		server = Server(app, app.activate_action_selector)
+		try:
+			server.start()
+			app.run()
+		finally:
+			server.stop()
 		
 # def main(*args: str):
 # 	App().run()

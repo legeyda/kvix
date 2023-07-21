@@ -2,6 +2,7 @@ import http.client
 import http.server
 import threading
 from typing import Callable
+from kwix import Context
 
 from kwix.conf import Conf
 from kwix.l10n import _
@@ -43,6 +44,9 @@ class Client(Configurable):
 	def activate(self):
 		if not self._http('/activate'):
 			raise RuntimeError('remote activate failed')
+	def quit(self):
+		if not self._http('/quit'):
+			raise RuntimeError('remote quit failed')
 	def _http(self, path: str) -> bool:
 		conn = http.client.HTTPConnection(self._host() + ':' + str(self._port()))
 		try:
@@ -54,8 +58,9 @@ class Client(Configurable):
 
 
 class Server(Configurable):
-	def __init__(self, conf: Conf, on_activate: Callable[[], None]):
-		Configurable.__init__(self, conf)
+	def __init__(self, context: Context, on_activate: Callable[[], None]):
+		Configurable.__init__(self, context.conf)
+		self._context = context
 		self._on_activate = on_activate
 		self._http_server = None
 	def run(self):
@@ -69,11 +74,20 @@ class Server(Configurable):
 					try:
 						this_server._on_activate()
 						self.response(200, 'ok')
-					except Exception as e:  
-						print(e)
-						self.response(500, 'Internal server error, see server logs for details.')						
+					except Exception as e:
+						self._error(e)
+				elif self.path == '/quit':
+					try:
+						this_server._context.quit()
+						self.response(200, 'ok')
+					except Exception as e:
+						self._error(e)
 				else:
 					self.response(400, 'wrong request')
+			def _error(self, e: Exception | None = None):
+				if e:
+					print(e)
+				self.response(500, 'Internal server error, see server logs for details.')				
 			def response(self, status: int, msg: str):
 				self.send_response(status)
 				self.send_header("Content-Type", "application/json")
