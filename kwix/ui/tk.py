@@ -64,7 +64,8 @@ class ModalWindow:
 		self._window.geometry('500x200')
 		self._window.columnconfigure(0, weight=1)
 		self._window.rowconfigure(0, weight=1)
-		self._window.bind('<Escape>', lambda _: self.hide())
+		self._window.bind('<Escape>', lambda _: self._do_hide())
+		self._window.protocol("WM_DELETE_WINDOW", lambda: self._do_hide())
 		self._window.withdraw()
 	def show(self):
 		self.parent._exec_in_mainloop(self._do_show)
@@ -73,7 +74,9 @@ class ModalWindow:
 		self._window.title(self.title) # todo: _tkinter.TclError: bad window path name ".!toplevel"
 		self._window.focus_set()
 	def hide(self) -> None:
-		self.parent._exec_in_mainloop(self._window.withdraw)
+		self.parent._exec_in_mainloop(self._do_hide)
+	def _do_hide(self) -> None:
+		self._window.withdraw()
 	def destroy(self):
 		if not self._window:
 			return
