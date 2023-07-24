@@ -275,8 +275,11 @@ class Dialog(kwix.Dialog, ModalWindow):
 			self.destroy()
 	def go(self) -> None: # todo rename to "show"
 		self.builder.load(self.value)
-		self._first_entry.select_range(0, 'end')
 		self.show()
+	def _do_show(self):
+		super()._do_show()
+		self._first_entry.select_range(0, 'end')
+		self._first_entry.focus_set()
 	def destroy(self) -> None:
 		return ModalWindow.destroy(self)
 		
