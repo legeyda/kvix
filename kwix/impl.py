@@ -115,7 +115,10 @@ class BaseAction(Action):
 		self._description = description or title
 
 	def _match(self, query: str) -> bool:
-		return query_match(query or '', self.title, self.description)
+		return query_match(query or '', *self._word_list())
+
+	def _word_list(self) -> list[str]:
+		return [self.title, self.description]
 
 	def _create_default_items(self) -> list[Item]:
 		return [BaseItem(self.title, [BaseItemAlt(execute_text, self._run)])]
@@ -142,7 +145,9 @@ class BaseActionRegistry(kwix.ActionRegistry):
 
 	def load(self):
 		self.stor.load()
-		self._actions = [self.action_from_config(x) for x in (self.stor.data or [])]
+		self._actions = []
+		for action_config in self.stor.data or []:
+			self._actions.append(self.action_from_config(action_config))
 
 	def save(self) -> None:
 		self.stor.data = [action.to_config() for action in self.actions]
