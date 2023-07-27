@@ -112,18 +112,30 @@ class Selector(ModalWindow, BaseSelector):
 
 		self._search_query = tk.StringVar()
 		self._search_query.trace_add("write", self._on_query_entry_type)
-		self._search_entry = ttk.Entry(
-			self._mainframe, textvariable=self._search_query)
+		self._search_entry = ttk.Entry(self._mainframe, textvariable=self._search_query)
 		self._search_entry.grid(column=0, row=0, sticky='ew')
 		for key in ('<Up>', '<Down>'):
 			self._search_entry.bind(key, self._on_search_entry_updown)
 
+		result_frame = ttk.Frame(self._mainframe)
+		result_frame.rowconfigure(0, weight=1)
+		result_frame.columnconfigure(0, weight=1)
+		result_frame.grid(column=0, row=1, sticky='nsew')
+
 		self._result_list = tk.StringVar()
-		self._result_listbox = tk.Listbox(
-			self._mainframe, listvariable=self._result_list, takefocus=False, selectmode='browse')
-		self._result_listbox.grid(column=0, row=1, sticky='nsew')
+		self._result_listbox = tk.Listbox(result_frame, listvariable=self._result_list, takefocus=False, selectmode='browse')
+		self._result_listbox.grid(column=0, row=0, sticky='nsew')
 		self._result_listbox.bind("<Button-1>", self._on_list_left_click)
 		self._result_listbox.bind("<Button-3>", self._on_list_right_click)
+
+		scrollbar = ttk.Scrollbar(result_frame, orient='vertical')
+		scrollbar.grid(column=1, row=0, sticky='nsew')
+
+		# bind scrollbar to result list
+		self._result_listbox.config(yscrollcommand=scrollbar.set)
+		scrollbar.config(command = self._result_listbox.yview)
+
+
 		self._on_query_entry_type()
 		
 
@@ -157,7 +169,8 @@ class Selector(ModalWindow, BaseSelector):
 			return
 		if not self._result_listbox.curselection():
 			self._result_listbox.selection_set(0)
-		sel = newsel = self._result_listbox.curselection()[0]
+		sel: int = self._result_listbox.curselection()[0]
+		newsel: int = sel
 		if 'Up' == event.keysym:
 			if sel > 0:
 				newsel = sel - 1
@@ -167,6 +180,9 @@ class Selector(ModalWindow, BaseSelector):
 		if sel != newsel:
 			self._result_listbox.selection_clear(sel)
 			self._result_listbox.selection_set(newsel)
+			self._result_listbox.see(sel - 1)
+			self._result_listbox.see(sel + 1)
+			self._result_listbox.see(sel)
 
 	def _on_list_left_click(self, event):
 		self._select_item_at_y_pos(event.y)
