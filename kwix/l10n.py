@@ -26,8 +26,8 @@ class Text:
 	def __getitem__(self, locale: str) -> str:
 		return self.l10ns.get(locale, self.default)
 	
-	def values(self) -> list[str]:
-		return [self.default, *self.l10ns.values()]
+	def values(self) -> set[str]:
+		return set([self.default, *self.l10ns.values()])
 
 
 

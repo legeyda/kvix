@@ -1,7 +1,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Sequence, cast
+from typing import Any, Callable, Sequence, cast, Protocol
 from types import ModuleType
 from inspect import isclass
 
@@ -62,16 +62,18 @@ class BaseSelector(kwix.Selector):
 			self.title = title
 
 
+class ActionFactory(Protocol):
+	def __call__(self, action_type: ActionType, title: str, description: str | None = None, **config: Any) -> Action: ...
 	
 class BaseActionType(ActionType):
-	def __init__(self, context: kwix.Context, id: str, title: str, action_factory: Callable[[ActionType, str, str], Action] | None = None):
+	def __init__(self, context: kwix.Context, id: str, title: str, action_factory: ActionFactory | None = None):
 		self.context = context
 		self.id = id
 		self.title = title
 		self.action_factory = action_factory
 
-	def create_default_action(self, title: str, description: str | None = None) -> Action:
-		return self.action_factory(self, title, description)
+	def create_default_action(self, title: str, description: str | None = None, **config: Any) -> Action:
+		return cast(ActionFactory, self.action_factory)(self, title, description, **config)
 
 	def action_from_config(self, value: Any) -> Action:
 		dic = self._assert_config_valid(value)
@@ -109,10 +111,11 @@ class BaseActionType(ActionType):
 		builder.on_save(save)
 
 class BaseAction(Action):
-	def __init__(self, action_type: ActionType, title: str, description: str | None = None):
+	def __init__(self, action_type: ActionType, title: str, description: str | None = None, **config: Any):
 		self._action_type = action_type
 		self._title = title
 		self._description = description or title
+		self._config = {**config}
 
 	def _match(self, query: str) -> bool:
 		return query_match(query or '', *self._word_list())
