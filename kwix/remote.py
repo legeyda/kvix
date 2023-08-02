@@ -34,26 +34,36 @@ class Configurable:
 	def _on_change_conf(self) -> None:
 		pass
 
-
-
+def apply(msg, func, *args, **kwargs):
+	try:
+		return apply(func, *args, **kwargs)
+	except Exception as e:
+		raise RuntimeError(msg) from e
 
 
 class Client(Configurable):
-	def ping(self) -> bool:
-		return self._http('/ping')
+	def is_server_ready(self):
+		try:
+			self._http('/ping')
+			return True
+		except:
+			return False
+	def ping(self):
+		self._http('/ping')
 	def activate(self):
-		if not self._http('/activate'):
-			raise RuntimeError('remote activate failed')
+		self._http('/activate')
 	def quit(self):
-		if not self._http('/quit'):
-			raise RuntimeError('remote quit failed')
-	def _http(self, path: str) -> bool:
+		self._http('/quit')
+	def _http(self, path: str):
 		conn = http.client.HTTPConnection(self._host() + ':' + str(self._port()))
 		try:
 			conn.request("POST", path)
-			return 2 == conn.getresponse().status / 100
-		except:
-			return False
+			status = conn.getresponse().status
+			body = conn.getresponse().read()
+			if 2 != status / 100:
+				raise RuntimeError('remote call %s failed: status %d, body %s' % (path, status, body))
+		except Exception as e:
+			raise RuntimeError('remote call to %s failed: %s' % (path, e)) from e
 
 
 

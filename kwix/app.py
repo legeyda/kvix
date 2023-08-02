@@ -16,6 +16,7 @@ from kwix.util import get_config_dir, get_data_dir, get_cache_dir, ensure_type, 
 from kwix.plugin import Plugin as PanPlugin
 from argparse import ArgumentParser
 from kwix.remote import Server, Client as RemoteClient
+from enum import Enum
 
 activate_action_text = _('Activate').setup(ru_RU='Выпуолнить', de_DE='Aktivieren')
 edit_action_text = _('Edit Action: {{action_title}} ({{action_type_title}})').setup(ru_RU='Редактировать действие "{{action_title}}" ({{action_type_title}})', de_DE='Aktion Bearbeiten: "{{action_title}}" ({{action_type_title}})')
@@ -145,30 +146,45 @@ class App(Context):
 	def register_global_hotkeys(self):
 		activate_window_hotkey = self.conf.item('activate_window_hotkey').setup(title = "Activate Window", default = '<ctrl>+;', read_mapping=str)
 		pynput.keyboard.GlobalHotKeys({activate_window_hotkey.read(): self.activate_action_selector}).start()
+	
 
+
+
+class RemoteCommand(Enum):
+    ping = 'ping'
+    activate = 'activate'
+    quit = 'quit'
+    def __str__(self):
+	    return self.value
 
 
 def main(*args: str):
 	parser = ArgumentParser(prog='kwix')
-	parser.add_argument('-a', '--activate', action='store_true', help='show action selector immediately after start')
+	parser.add_argument('-r', '--remote', type=RemoteCommand, choices=list(RemoteCommand), help='activate remote command')
+	#parser.add_argument('-a', '--activate', action='store_true', help='show action selector immediately after start')
+	#parser.add_argument('-f', '--force', action='store_true', help='skip existing running instance check')
 	parsed_args = parser.parse_args(args)
 
 	conf = load_conf()
 	remote_client = RemoteClient(conf)
-	if remote_client.ping():
-		if parsed_args.activate:
+	if parsed_args.remote:
+		if RemoteCommand.ping == parsed_args.remote:
+			remote_client.ping()
+		elif RemoteCommand.activate == parsed_args.remote:
 			remote_client.activate()
-	else:
+		elif RemoteCommand.quit == parsed_args.remote:
+			remote_client.quit()
+	elif not remote_client.is_server_ready():
 		app = App(conf)
-		if parsed_args.activate:
-			app.on_start = app.activate_action_selector
 		server = Server(app, app.activate_action_selector)
 		try:
 			server.start()
 			app.run()
 		finally:
 			server.stop()
-		
-# def main(*args: str):
-# 	App().run()
+	else:
+		print('already running')
+
+if __name__ == '__main__':
+	main(*sys.argv)
 	

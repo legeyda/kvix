@@ -101,8 +101,8 @@ class Selector(ModalWindow, BaseSelector):
 	def _init_window(self):
 		self._window.bind('<Return>', cast(Any, lambda x: self._on_enter(0)))
 		self._window.bind('<Alt-KeyPress-Return>', cast(Any, lambda x: self._on_enter(1)))
-		self._window.bind('<Control-F10>', lambda x: self._on_popup_key_press())
-		self._window.bind('<Menu>', lambda x: self._on_popup_key_press()) # menu key: name=menu, value=65383
+		for key in ['<Menu>', 'Shift-F10']: # menu key: name=menu, value=65383
+			self._window.bind(key, lambda x: self._on_popup_key_press()) 
 		
 
 		self._mainframe = ttk.Frame(self._window)
