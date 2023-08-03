@@ -18,3 +18,4 @@ todo:
 	save action selector query in cache
 	save selectors between activations
 	tk themes
+	ctrl+home & ctrl+end
