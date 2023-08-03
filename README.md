@@ -15,3 +15,6 @@ todo:
 	obsidian daily note
 	просмотр сертификата
 	Read the SSL Certificate information from a remote server
+	save action selector query in cache
+	save selectors between activations
+	tk themes

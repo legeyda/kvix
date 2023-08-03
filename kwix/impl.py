@@ -1,15 +1,17 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Sequence, cast, Protocol
-from types import ModuleType
 from inspect import isclass
+from types import ModuleType
+from typing import Any, Callable, Protocol, cast
+
+import funcy
 
 import kwix
-from kwix import Action, ActionType, Item, Context
+from kwix import Action, ActionType, Context, Item
 from kwix.l10n import _
-from kwix.util import Propty, query_match
 from kwix.stor import Stor
+from kwix.util import Propty, query_match
 
 unnamed_text = _('Unnamed').setup(ru_RU='Без названия', de_DU='Ohne Titel')
 execute_text = _('Execute').setup(ru_RU='Выполнить', de_DU='Ausführen')
@@ -65,19 +67,23 @@ class BaseSelector(kwix.Selector):
 class ActionFactory(Protocol):
 	def __call__(self, action_type: ActionType, title: str, description: str | None = None, **config: Any) -> Action: ...
 	
+
 class BaseActionType(ActionType):
-	def __init__(self, context: kwix.Context, id: str, title: str, action_factory: ActionFactory | None = None):
+	def __init__(self, context: kwix.Context, id: str, title: str,
+	      action_factory: ActionFactory | None = None,
+	      config_entry_texts: dict[str, Any] = {}):
 		self.context = context
 		self.id = id
 		self.title = title
 		self.action_factory = action_factory
+		self.config_entry_texts = config_entry_texts
 
 	def create_default_action(self, title: str, description: str | None = None, **config: Any) -> Action:
 		return cast(ActionFactory, self.action_factory)(self, title, description, **config)
 
 	def action_from_config(self, value: Any) -> Action:
-		dic = self._assert_config_valid(value)
-		return self.create_default_action(dic['title'], dic.get('description'))
+		dic = {**self._assert_config_valid(value)}
+		return self.create_default_action(str(dic['title']), str(dic.get('description', '')), **funcy.omit(dic, ['title', 'description']))
 
 	def _assert_config_valid(self, value: Any) -> dict[Any, Any]:
 		if type(value) != dict:
@@ -93,20 +99,32 @@ class BaseActionType(ActionType):
 	def create_editor(self, builder: kwix.DialogBuilder) -> None:
 		builder.create_entry('title', str(title_text))
 		builder.create_entry('description', str(description_text))
+		for key, text in self.config_entry_texts.items():
+			builder.create_entry(key, str(text))
 		def load(value: Any | None):
 			if isinstance(value, Action):
 				builder.widget('title').set_value(value.title)
 				builder.widget('description').set_value(value.description)	
+				for key in self.config_entry_texts:
+					builder.widget(key).set_value(value._config[key])
 		builder.on_load(load)
 
 		def save(value: Any | None) -> Any:
-			value = value or {}
 			if isinstance(value, Action):
 				value.title = builder.widget('title').get_value()
 				value.description = builder.widget('description').get_value()
-			if isinstance(value, dict):
+				for key in self.config_entry_texts:
+					value._config[key] = builder.widget(key).get_value()
+			elif isinstance(value, dict):
 				value['title'] = builder.widget('title').get_value()
 				value['description'] = builder.widget('description').get_value()
+				for key in self.config_entry_texts:
+					value[key] = builder.widget(key).get_value()
+			elif not value:
+				value = self.create_default_action(
+					builder.widget('title').get_value(),
+					builder.widget('description').get_value(),
+					**{key: builder.widget(key).get_value() for key in self.config_entry_texts.keys() - {'title', 'description'}})
 			return value
 		builder.on_save(save)
 
@@ -121,7 +139,7 @@ class BaseAction(Action):
 		return query_match(query or '', *self._word_list())
 
 	def _word_list(self) -> list[str]:
-		return [self.title, self.description]
+		return [self.title, self.description, *self._config.values()]
 
 	def _create_default_items(self) -> list[Item]:
 		return [BaseItem(self.title, [BaseItemAlt(execute_text, self._run)])]
@@ -138,7 +156,8 @@ class BaseAction(Action):
 		return {
 			'type': self.action_type.id,
 			'title': self.title,
-			'description': self.description
+			'description': self.description,
+			**self._config
 		}
 
 class BaseActionRegistry(kwix.ActionRegistry):
