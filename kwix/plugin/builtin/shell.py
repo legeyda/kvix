@@ -24,7 +24,7 @@ class Action(BaseAction):
 			pass
 		shell_command = chevron.render(str(self._config['command']), env)
 		shell_args = shlex.split(shell_command)
-		subprocess.run(shell_args, env=env)
+		subprocess.Popen(shell_args, env=env)
 	
 
 class Plugin(BasePlugin):
