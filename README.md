@@ -19,3 +19,4 @@ todo:
 	save selectors between activations
 	tk themes
 	ctrl+home & ctrl+end
+	restart action

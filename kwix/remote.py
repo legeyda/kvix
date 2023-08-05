@@ -9,22 +9,13 @@ from kwix.l10n import _
 
 listen_host_conf_title = _('Host').setup(ru_RU='Хост')
 listen_port_conf_title = _('Port').setup(ru_RU='Порт')
-
-
-def get_host_port(conf: Conf):
-	scope = conf.scope('kwix').scope('remote')
-	listen_host_conf_item = scope.item('host').setup(default = '127.0.0.1', title = str(listen_host_conf_title))
-	listen_port_conf_item = scope.item('port').setup(default = '23844', title = str(listen_port_conf_title), read_mapping=int)
-	return (str(listen_host_conf_item.read()), listen_port_conf_item.read())
-
-		
-
+remote_scope_title_text = _('Remote Control').setup(ru_RU='Удалённое управление')
 
 class Configurable:
 	def __init__(self, conf: Conf):
 		self._conf = conf
 	def _scope(self) -> Conf:
-		return self._conf.scope('kwix').scope('remote')
+		return self._conf.scope('kwix').scope('remote').setup(title = str(remote_scope_title_text))
 	def _host(self) -> str:
 		item = self._scope().item('host').setup(default = '127.0.0.1', title = str(listen_host_conf_title), on_change=self._on_change_conf)
 		return str(item.read())

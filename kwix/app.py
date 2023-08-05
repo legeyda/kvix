@@ -26,7 +26,9 @@ delete_action_text = _('Remove Action: {{action_title}} ({{action_type_title}})'
 
 
 def load_conf():
-	return StorConf(YamlFile(get_config_dir().joinpath('config.yaml')))
+	result = StorConf(YamlFile(get_config_dir().joinpath('config.yaml')))
+	result.load()
+	return result
 
 class App(Context):
 
@@ -144,7 +146,7 @@ class App(Context):
 		#self.server.stop()
 
 	def register_global_hotkeys(self):
-		activate_window_hotkey = self.conf.item('activate_window_hotkey').setup(title = "Activate Window", default = '<ctrl>+;', read_mapping=str)
+		activate_window_hotkey = self.conf.item('activate_window_hotkey').setup(title = "Activate Window Hotkey", default = '<ctrl>+;', read_mapping=str)
 		pynput.keyboard.GlobalHotKeys({activate_window_hotkey.read(): self.activate_action_selector}).start()
 	
 
