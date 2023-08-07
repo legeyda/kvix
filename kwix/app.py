@@ -22,7 +22,8 @@ activate_action_text = _('Activate').setup(ru_RU='Выпуолнить', de_DE='
 edit_action_text = _('Edit Action: {{action_title}} ({{action_type_title}})').setup(ru_RU='Редактировать действие "{{action_title}}" ({{action_type_title}})', de_DE='Aktion Bearbeiten: "{{action_title}}" ({{action_type_title}})')
 delete_action_text = _('Remove Action: {{action_title}} ({{action_type_title}})').setup(ru_RU='Удалить действие "{{action_title}}" ({{action_type_title}})', de_DE='Aktion Löschen "{{action_title}}" ({{action_type_title}})')
 
-
+ui_scope_title_text = _('UI')
+ui_tk_scope_title_text = _('TK')
 
 
 def load_conf():
@@ -35,6 +36,7 @@ class App(Context):
 	
 	def __init__(self, conf: Conf | None = None):
 		self._conf = conf
+		self._conf.scope('ui', 'UI')
 
 	def run(self):
 		self.init_conf()
@@ -102,7 +104,7 @@ class App(Context):
 		self.tray.run(self.init_ui)
 
 	def init_ui(self):
-		self._ui = kwix.ui.tk.Ui()
+		self._ui = kwix.ui.tk.Ui(self.conf)
 		self.init_action_selector()
 		self.register_global_hotkeys()
 		self._ui.on_start = self.on_start

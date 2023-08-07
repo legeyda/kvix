@@ -11,8 +11,12 @@ import kwix.ui
 from kwix import ItemAlt, Item
 import kwix.ui.tk
 from kwix.util import ThreadRouter
-from kwix import Item, ItemSource
+from kwix import Item, ItemSource, Conf
 from kwix.impl import EmptyItemSource, BaseSelector, ok_text, cancel_text
+from ttkthemes import ThemedStyle
+from kwix.l10n import _
+
+style_config_item_title_text = _('Theme').setup(ru_RU='Тема')
 
 
 def get_logo():
@@ -27,12 +31,15 @@ def run_periodically(root: tk.Tk, interval_ms: int, action):
 
 
 class Ui(kwix.Ui):
-	def __init__(self):
+	def __init__(self, conf: Conf):
 		super().__init__()
 		self.root = tk.Tk()
 		self.root.wm_iconphoto(False, ImageTk.PhotoImage(get_logo()))
 		self.root.title('Kwix!')
 		self.root.withdraw()
+		style_conf_item = conf.scope('ui').scope('tk', 'Tk').item('theme').setup(title = str(style_config_item_title_text), default = 'ubuntu')
+		style = ThemedStyle(self.root)
+		style.set_theme(str(style_conf_item.read()))
 	def run(self):
 		self._thread_router = ThreadRouter()
 		run_periodically(self.root, 10, self._thread_router.process)
