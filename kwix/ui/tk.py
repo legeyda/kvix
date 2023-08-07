@@ -61,7 +61,7 @@ class ModalWindow:
 		# self._widow.wm_iconphoto(False, ImageTk.PhotoImage(get_logo()))
 		#self._window.transient(self.parent.root)
 		self._window.title(self.title)
-		self._window.geometry('500x200')
+		self._window.geometry('500x500')
 		self._window.columnconfigure(0, weight=1)
 		self._window.rowconfigure(0, weight=1)
 		self._window.bind('<Escape>', lambda _: self._do_hide())
@@ -111,11 +111,11 @@ class Selector(ModalWindow, BaseSelector):
 		self._mainframe.columnconfigure(0, weight=1)
 
 		self._search_query = tk.StringVar()
-		self._search_query.trace_add("write", self._on_query_entry_type)
+		self._search_query.trace_add("write", lambda *_: self._on_query_entry_type())
 		self._search_entry = ttk.Entry(self._mainframe, textvariable=self._search_query)
 		self._search_entry.grid(column=0, row=0, sticky='ew')
-		for key in ('<Up>', '<Down>'):
-			self._search_entry.bind(key, self._on_search_entry_updown)
+		for key in ('<Up>', '<Down>', '<Control-Home>', '<Control-End>'):
+			self._search_entry.bind(key, self._on_search_entry_keys) # todo bind _window and route to widgets
 
 		result_frame = ttk.Frame(self._mainframe)
 		result_frame.rowconfigure(0, weight=1)
@@ -164,7 +164,7 @@ class Selector(ModalWindow, BaseSelector):
 		except IndexError:
 			return None
 
-	def _on_search_entry_updown(self, event):
+	def _on_search_entry_keys(self, event):
 		if not self._result_listbox.size():
 			return
 		if not self._result_listbox.curselection():
@@ -177,7 +177,12 @@ class Selector(ModalWindow, BaseSelector):
 		elif 'Down' == event.keysym:
 			if sel + 1 < self._result_listbox.size():
 				newsel = sel + 1
+		elif 'Home' == event.keysym:
+			newsel = 0
+		elif 'End' == event.keysym:
+			newsel = self._result_listbox.size() - 1
 		if sel != newsel:
+			sel = min(self._result_listbox.size(), max(0, sel))
 			self._result_listbox.selection_clear(sel)
 			self._result_listbox.selection_set(newsel)
 			self._result_listbox.see(sel - 1)
@@ -232,10 +237,10 @@ class Selector(ModalWindow, BaseSelector):
 	def _do_show(self):
 		super()._do_show()
 		self._search_entry.focus_set()
-		self._on_query_entry_type()
 		self._search_entry.select_range(0, 'end')
+		self._on_query_entry_type()
 		
-	def _on_query_entry_type(self, name=None, index=None, mode=None) -> None:
+	def _on_query_entry_type(self) -> None:
 		self._item_list = self.item_source.search(self._search_query.get())
 		self._result_list.set(cast(Any, [str(item) for item in self._item_list]))
 		if self._item_list:
