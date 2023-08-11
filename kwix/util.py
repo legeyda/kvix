@@ -114,15 +114,18 @@ def query_match(query: str, *contents: str) -> bool:
 				return True
 	return False
 
-
+class Sentinel():
+    pass
+_sentinel = Sentinel()
 
 T = TypeVar("T")
 class Propty(Generic[T]):
 	def __init__(self, 
-	      default_supplier: Callable[[], T] | None = None,
+	      type: Type[T] = cast(Type[T], None),
+	      default_value: T = cast(T, _sentinel),
+	      default_supplier: Callable[[], T] = cast(Callable[[], T], None),
 		  on_change: str | bool | Callable[[Any, T], None] = False,
-		  private_name: str | None = None,
-		  type: Type[T] | None = None,
+		  private_name: str = cast(str, None),
 		  type_check: bool = False,
 		  writeable: bool = True,
 		  required: bool = False,
@@ -130,11 +133,11 @@ class Propty(Generic[T]):
 		  setter: Callable[[Any, T], None] | None = None):
 		if not writeable and setter:
 			raise RuntimeError('Propty: not writeable and setter')
-		if required and default_supplier:
+		if required and bool(default_supplier):
 			raise RuntimeError('Propty: required and default_supplier')
-		self._default_supplier = default_supplier
+		self._default_supplier = default_supplier or ((lambda: default_value) if default_value is not _sentinel else None) or type or (lambda: None)
 		self._on_change = on_change
-		self._private_name = cast(str, private_name)
+		self._private_name = private_name
 		self._type = type
 		if type_check and not type:
 			raise RuntimeError('Propty: type_check and not type')

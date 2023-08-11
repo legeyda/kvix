@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, cast
+from typing import Any, Callable
 
 from kwix.conf import Conf
 from kwix.l10n import _
@@ -12,8 +12,8 @@ class ItemAlt:
 		raise NotImplementedError()
 
 class Item:
-	priority = Propty(default_supplier=lambda: 0)
-	alts = Propty(list, type=list[ItemAlt], writeable=False)
+	priority = Propty(int)
+	alts = Propty(list[ItemAlt], writeable=False)
 
 class ItemSource:
 	def search(self, query: str) -> list[Item]:
@@ -22,10 +22,10 @@ class ItemSource:
 
 
 class Context:
-	conf: Propty[Conf] = Propty(writeable=False)
+	conf = Propty(writeable=False)
 	ui: Propty[Ui] = Propty(writeable=False)
 	action_registry: Propty[ActionRegistry] = Propty(writeable=False)
-	on_start = Propty(lambda: (lambda: None), type = Callable[[], None])
+	on_start = Propty(Callable[[], None], default_value=lambda: None)
 	def quit(self) -> None:
 		raise NotImplementedError()
 
@@ -44,9 +44,9 @@ class ActionType:
 		raise NotImplementedError()
 
 class Action:
-	action_type = Propty(type = ActionType)
-	title = Propty(type = str)
-	description = Propty(type = str)
+	action_type = Propty(ActionType)
+	title = Propty(str)
+	description = Propty(str)
 
 	def search(self, query: str) -> list[Item]:
 		raise NotImplementedError()
@@ -55,8 +55,8 @@ class Action:
 		raise NotImplementedError()
 
 class ActionRegistry(ItemSource):
-	action_types: Propty[dict[str, ActionType]] = Propty(dict, writeable=False)
-	actions: Propty[list[Action]] = Propty(list, writeable=False)
+	action_types = Propty(dict[str, ActionType], writeable=False)
+	actions = Propty(list[Action], writeable=False)
 	
 	def load(self) -> None:
 		raise NotImplementedError()
@@ -78,7 +78,7 @@ class ActionRegistry(ItemSource):
 
 
 class Ui:
-	on_start = Propty(lambda: lambda: None, type = Callable[[], None])
+	on_start = Propty(Callable[[], None], default_value=lambda: None)
 	def run(self) -> None:
 		raise NotImplementedError()
 	def selector(self) -> Selector:
@@ -89,19 +89,19 @@ class Ui:
 		raise NotImplementedError()
 
 class Selector:
-	title = Propty(type=str)
-	item_source = Propty(type=ItemSource)
+	title = Propty(str)
+	item_source = Propty(ItemSource)
 	def go(self) -> None:
 		raise NotImplementedError()
 	def destroy(self) -> None:
 		raise NotImplementedError()
 	
 class Dialog:
-	title = Propty(lambda: 'kwix', type = str)
-	value = Propty(type = Any)
-	on_ok = Propty(lambda: (lambda: None), type = Callable[[], None])
-	on_cancel = Propty(lambda: (lambda: None), type = Callable[[], None])
-	auto_destroy = Propty(lambda: True)
+	title = Propty(str, default_value='kwix')
+	value = Propty()
+	on_ok = Propty(Callable[[], None], default_value=lambda: None)
+	on_cancel = Propty(Callable[[], None], default_value = lambda: None)
+	auto_destroy = Propty(bool, default_value=True)
 	def go(self) -> None:
 		raise NotImplementedError()
 	def destroy(self) -> None:

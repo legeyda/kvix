@@ -56,8 +56,8 @@ class EmptyItemSource(kwix.ItemSource):
 
 
 class BaseSelector(kwix.Selector):
-	title = Propty(lambda: unnamed_text)
-	item_source: Propty[kwix.ItemSource] = cast(Propty[kwix.ItemSource], Propty(EmptyItemSource()))
+	title = Propty(default_value=unnamed_text)
+	item_source = Propty(kwix.ItemSource, default_supplier=lambda: EmptyItemSource())
 	def __init__(self, item_source: kwix.ItemSource = EmptyItemSource(), title: str | None = None):
 		self.item_source = item_source
 		if title is not None:
