@@ -19,3 +19,4 @@ todo:
 	tk themes
 	ctrl+home & ctrl+end
 	restart action
+	rename kwix.Ui.destroy to stop?

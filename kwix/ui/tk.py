@@ -165,6 +165,8 @@ class Selector(ModalWindow, BaseSelector):
 	def _get_selected_index(self) -> int | None:
 		selection = self._result_listbox.curselection()
 		if not selection:
+			if len(self._item_list) > 0:
+				return 0
 			return None
 		try:
 			return selection[0]
@@ -244,8 +246,9 @@ class Selector(ModalWindow, BaseSelector):
 	def _do_show(self):
 		super()._do_show()
 		self._search_entry.focus_set()
-		self._search_entry.select_range(0, 'end')
 		self._on_query_entry_type()
+		self._search_entry.select_range(0, 'end')
+		
 		
 	def _on_query_entry_type(self) -> None:
 		self._item_list = self.item_source.search(self._search_query.get())
