@@ -201,7 +201,7 @@ class Propty(Generic[T]):
 				if silent:
 					return cast(T, None)
 				raise RuntimeError('property is required')
-			return cast(T, self._default_supplier() if self._default_supplier else None)
+			return self._default_supplier()
 		return getattr(obj, self._private_name)
 
 
