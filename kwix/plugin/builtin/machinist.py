@@ -11,6 +11,7 @@ from kwix.util import query_match
 text_text = _('Text').setup(ru_RU='Текст')
 type_text = _('Type text').setup(ru_RU='Печатать текст', de_DE='Text eingeben')
 copy_text = _('Copy to clipboard').setup(ru_RU='Копировать в буфер обмена', de_DE='In die Zwischenablage kopieren')
+paste_text = _('Copy&Paste').setup(ru_RU='Копировать&Вставить', de_DE='In die Zwischenablage kopieren&einfügen')
 
 
 class MachinistActionType(BaseActionType):
@@ -48,10 +49,21 @@ class BaseMachinist(BaseAction):
 		pynput.keyboard.Controller().type(self._get_text())
 	def _copy_text(self):
 		pyclip.copy(self._get_text())
+	def _paste_text(self):
+		old_clipboard_content = pyclip.paste()
+		self._copy_text()
+		from pynput.keyboard import Key, Controller
+		keyboard = Controller()
+		keyboard.press(Key.ctrl.value)
+		keyboard.press('v')
+		keyboard.release('v')
+		keyboard.release(Key.ctrl.value)
+		pyclip.copy(old_clipboard_content)
 	def _create_default_items(self) -> list[BaseItem]:
 		type_alt: ItemAlt = BaseItemAlt(type_text, self._type_text)
 		copy_alt: ItemAlt = BaseItemAlt(copy_text, self._copy_text)
-		return [BaseItem(self.title, [type_alt, copy_alt])]
+		paste_alt: ItemAlt = BaseItemAlt(paste_text, self._paste_text)
+		return [BaseItem(self.title, [type_alt, copy_alt, paste_alt])]
 
 
 

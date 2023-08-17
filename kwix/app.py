@@ -1,5 +1,5 @@
 
-from typing import Any, Sequence
+from typing import cast
 
 import pynput
 
@@ -35,7 +35,7 @@ class App(Context):
 
 	
 	def __init__(self, conf: Conf | None = None):
-		self._conf = conf
+		self._conf = cast(Conf, conf)
 		self._conf.scope('ui', 'UI')
 
 	def run(self):
