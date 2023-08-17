@@ -106,11 +106,14 @@ for key_set in key_sets:
 def query_match(query: str, *contents: str) -> bool:
 	if not query:
 		return True
+	def normalize(x: str):
+		return x.lower().replace('ё', 'е')
 	for word in query.split():
 		if not word:
 			continue
+		word = normalize(word)
 		for item in contents:
-			if word.lower() in item.lower():
+			if word in normalize(item.lower()):
 				return True
 	return False
 
@@ -125,12 +128,14 @@ class Propty(Generic[T]):
 	      default_value: T = cast(T, _sentinel),
 	      default_supplier: Callable[[], T] = cast(Callable[[], T], None),
 		  on_change: str | bool | Callable[[Any, T], None] = False,
-		  private_name: str = cast(str, None),
+		  private_name: str = '',
 		  type_check: bool = False,
 		  writeable: bool = True,
 		  required: bool = False,
 		  getter: Callable[[Any], T] | None = None,
 		  setter: Callable[[Any, T], None] | None = None):
+		self._name = ''
+		self._type = type
 		if not writeable and setter:
 			raise RuntimeError('Propty: not writeable and setter')
 		if required and bool(default_supplier):
@@ -138,7 +143,6 @@ class Propty(Generic[T]):
 		self._default_supplier = default_supplier or ((lambda: default_value) if default_value is not _sentinel else None) or type or (lambda: None)
 		self._on_change = on_change
 		self._private_name = private_name
-		self._type = type
 		if type_check and not type:
 			raise RuntimeError('Propty: type_check and not type')
 		self._type_check = type_check
@@ -185,17 +189,18 @@ class Propty(Generic[T]):
 	def _builtin_setter(self, obj: Any, value: T) -> None:
 		setattr(obj, self._private_name, value)
 	def __get__(self, obj: Any, objtype: Any = None) -> T:
-		if not obj:
-			raise AttributeError("Propty is for instances only")
+		self._assert_obj(obj)
 		result = self._getter(obj)
 		self._assert_type(result)
 		setattr(obj, self._private_name, result)
 		return result
+	def _assert_obj(self, obj: Any):
+		if not obj:
+			raise AttributeError("Propty is for instances only")
 	def _builtin_getter(self, obj: Any) -> T:
 		return self._get_silent(obj)
 	def _get_silent(self, obj: Any, silent: bool = False) -> T:
-		if not obj:
-			raise AttributeError("Propty is for instances only")
+		self._assert_obj(obj)
 		if not hasattr(obj, self._private_name):
 			if self._required:
 				if silent:
