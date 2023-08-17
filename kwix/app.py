@@ -7,6 +7,7 @@ import kwix.impl
 import kwix.plugin
 import kwix.ui.tk
 import kwix.ui.tray
+import kwix.ui.kivy
 from kwix import Action, ActionRegistry, Context, Item
 from kwix.conf import Conf, StorConf
 from kwix.impl import BaseItem, BaseItemAlt, FuncItemSource, BaseActionRegistry
@@ -105,6 +106,7 @@ class App(Context):
 
 	def init_ui(self):
 		self._ui = kwix.ui.tk.Ui(self.conf)
+		#self._ui = kwix.ui.kivy.Ui(self.conf)
 		self.init_action_selector()
 		self.register_global_hotkeys()
 		self._ui.on_start = self.on_start

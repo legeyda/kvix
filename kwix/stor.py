@@ -30,3 +30,17 @@ class YamlFile(Stor):
 			os.makedirs(dir_path,)
 		with open(self._file_path, 'w') as out:
 			yaml.dump(self.data, out, default_flow_style=False, allow_unicode=True)
+
+class SaveLaterStor(Stor):
+	def __init__(self, wrap: Stor):
+		self._wrap = wrap
+		self._dirty = False
+	def load(self) -> None:
+		self._wrap.load()
+		self._dirty = False
+	def save(self) -> None:
+		self._dirty = True
+	def do_save_if_dirty(self):
+		if self._dirty:
+			self._wrap.save()
+			self._dirty = False
