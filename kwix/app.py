@@ -105,8 +105,8 @@ class App(Context):
 		self.tray.run(self.init_ui)
 
 	def init_ui(self):
-		self._ui = kwix.ui.tk.Ui(self.conf)
-		#self._ui = kwix.ui.kivy.Ui(self.conf)
+		#self._ui = kwix.ui.tk.Ui(self.conf)
+		self._ui = kwix.ui.kivy.Ui(self.conf)
 		self.init_action_selector()
 		self.register_global_hotkeys()
 		self._ui.on_start = self.on_start
