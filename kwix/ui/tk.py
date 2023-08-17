@@ -10,9 +10,8 @@ import kwix
 import kwix.ui
 from kwix import ItemAlt, Item
 import kwix.ui.tk
-from kwix.util import ThreadRouter
 from kwix import Item, ItemSource, Conf
-from kwix.impl import EmptyItemSource, BaseSelector, ok_text, cancel_text
+from kwix.impl import EmptyItemSource, BaseSelector, ok_text, cancel_text, BaseUi
 from ttkthemes import ThemedStyle
 from kwix.l10n import _
 
@@ -30,7 +29,7 @@ def run_periodically(root: tk.Tk, interval_ms: int, action):
 	on_timer()
 
 
-class Ui(kwix.Ui):
+class Ui(BaseUi):
 	def __init__(self, conf: Conf):
 		super().__init__()
 		self.root = tk.Tk()
@@ -41,8 +40,8 @@ class Ui(kwix.Ui):
 		style = ThemedStyle(self.root)
 		style.set_theme(str(style_conf_item.read()))
 	def run(self):
-		self._thread_router = ThreadRouter()
-		run_periodically(self.root, 10, self._thread_router.process)
+		BaseUi.run(self)
+		run_periodically(self.root, 10, self._process_mainloop)
 		self.root.after(0, self.on_start)
 		self.root.mainloop()
 	def _exec_in_mainloop(self, func: Callable[[], None]) -> None:

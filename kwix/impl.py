@@ -8,10 +8,11 @@ from typing import Any, Callable, Protocol, cast
 import funcy
 
 import kwix
-from kwix import Action, ActionType, Context, Item
+from kwix import Action, ActionType, Context, Item, Ui
 from kwix.l10n import _
 from kwix.stor import Stor
 from kwix.util import Propty, query_match
+from kwix.util import ThreadRouter
 
 unnamed_text = _('Unnamed').setup(ru_RU='Без названия', de_DU='Ohne Titel')
 execute_text = _('Execute').setup(ru_RU='Выполнить', de_DU='Ausführen')
@@ -235,3 +236,17 @@ class FromModule(BasePlugin):
 		return self._wrap.get_action_types() if self._wrap else []
 	def get_actions(self) -> list[Action]:
 		return self._wrap.get_actions() if self._wrap else []
+
+
+
+
+
+class BaseUi(Ui):
+	def __init__(self):
+		self._thread_router: ThreadRouter = cast(ThreadRouter, None)
+	def run(self):
+		self._thread_router = ThreadRouter()
+	def _exec_in_mainloop(self, func: Callable[[], None]) -> None:
+		self._thread_router.exec(func)
+	def _process_mainloop(self):
+		self._thread_router.process()
