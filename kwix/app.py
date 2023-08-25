@@ -6,6 +6,7 @@ import pynput
 import kwix.impl
 import kwix.plugin
 import kwix.ui.tk
+import kwix.ui.gi
 import kwix.ui.tray
 from kwix import Action, ActionRegistry, Context, Item
 from kwix.conf import Conf, StorConf
@@ -104,7 +105,8 @@ class App(Context):
 		self.tray.run(self.init_ui)
 
 	def init_ui(self):
-		self._ui = kwix.ui.tk.Ui(self.conf)
+		#self._ui = kwix.ui.tk.Ui(self.conf)
+		self._ui = kwix.ui.gi.Ui(self.conf)
 		self._ui.on_ready(self._on_ui_ready)
 		self.ui.run()
 
