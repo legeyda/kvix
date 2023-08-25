@@ -13,7 +13,8 @@ dependencies = [
 	"pkgconfig==1.5.5",
 	"PyYAML==6.0",
 	"pyclip==0.7.0",
-	"ttkthemes==3.2.2"
+	"ttkthemes==3.2.2",
+	"wxPython==4.2.1"
 ]
 
 [project.scripts]
