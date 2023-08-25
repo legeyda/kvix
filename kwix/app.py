@@ -105,11 +105,13 @@ class App(Context):
 
 	def init_ui(self):
 		self._ui = kwix.ui.tk.Ui(self.conf)
+		self._ui.on_ready(self._on_ui_ready)
+		self.ui.run()
+
+	def _on_ui_ready(self) -> None:
 		self.init_action_selector()
 		self.register_global_hotkeys()
-		self._ui.on_start = self.on_start
-		self.ui.run()
-		
+				
 	def init_action_selector(self):
 		self.action_selector = self.ui.selector()
 		self.action_selector.title = 'Kwix!!!'

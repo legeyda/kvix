@@ -157,10 +157,9 @@ class Propty(Generic[T]):
 		if not self._private_name:
 			self._private_name = '_' + name
 	def __set__(self, obj: Any, value: T):
-		if not obj:
-			raise AttributeError("Propty is for instances only")
+		self._assert_obj(obj)
 		if not self._writeable:
-			raise AttributeError('property for ' + self._private_name + ' is not writeable')
+			raise AttributeError('property for ' + self._name + ' is not writeable')
 		self._assert_type(value)
 		if self._on_change:
 			old_value: T = self._get_silent(obj, True)
@@ -170,8 +169,11 @@ class Propty(Generic[T]):
 		else:
 			self._setter(obj, value)
 	def _assert_type(self, value: T):
-		if self._type_check and not isinstance(value, self._type):
-			raise AttributeError('property ' + self._name + 'exp')
+		if not self._type_check:
+			return
+		assert self._type
+		if not isinstance(value, self._type):
+			raise AttributeError('property ' + self._name + ': unexpected type')
 	def _call_on_change(self, obj: Any, value: T) -> None:
 		if False is self._on_change:
 			return

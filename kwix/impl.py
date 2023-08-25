@@ -244,6 +244,12 @@ class FromModule(BasePlugin):
 class BaseUi(Ui):
 	def __init__(self):
 		self._thread_router: ThreadRouter = cast(ThreadRouter, None)
+		self._on_ready_listeners: list[Callable[[], None]] = []
+	def on_ready(self, f: Callable[[], None]) -> None:
+		self._on_ready_listeners.append(f)
+	def _call_on_ready_listeners(self):
+		for f in self._on_ready_listeners:
+			f()
 	def run(self):
 		self._thread_router = ThreadRouter()
 	def _exec_in_mainloop(self, func: Callable[[], None]) -> None:

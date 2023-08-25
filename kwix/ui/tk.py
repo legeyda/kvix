@@ -9,7 +9,6 @@ import kwix.impl
 import kwix
 import kwix.ui
 from kwix import ItemAlt, Item
-import kwix.ui.tk
 from kwix import Item, ItemSource, Conf
 from kwix.impl import EmptyItemSource, BaseSelector, ok_text, cancel_text, BaseUi
 from ttkthemes import ThemedStyle
@@ -42,7 +41,7 @@ class Ui(BaseUi):
 	def run(self):
 		BaseUi.run(self)
 		run_periodically(self.root, 10, self._process_mainloop)
-		self.root.after(0, self.on_start)
+		self.root.after(0, self._call_on_ready_listeners)
 		self.root.mainloop()
 	def _exec_in_mainloop(self, func: Callable[[], None]) -> None:
 		self._thread_router.exec(func)

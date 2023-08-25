@@ -25,7 +25,6 @@ class Context:
 	conf = Propty(writeable=False)
 	ui: Propty[Ui] = Propty(writeable=False)
 	action_registry: Propty[ActionRegistry] = Propty(writeable=False)
-	on_start = Propty(Callable[[], None], default_value=lambda: None)
 	def quit(self) -> None:
 		raise NotImplementedError()
 
@@ -78,7 +77,8 @@ class ActionRegistry(ItemSource):
 
 
 class Ui:
-	on_start = Propty(Callable[[], None], default_value=lambda: None)
+	def on_ready(self, f: Callable[[], None]) -> None:
+		raise NotImplementedError()
 	def run(self) -> None:
 		raise NotImplementedError()
 	def selector(self) -> Selector:
