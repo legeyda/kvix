@@ -9,6 +9,7 @@ from typing import Callable, Any, cast, Sequence
 import pkg_resources
 from PIL import Image
 import time
+import threading
 import kwix.impl
 import kwix
 import kwix.ui
@@ -16,14 +17,12 @@ from kwix import ItemAlt, Item
 from kwix import Item, ItemSource, Conf
 from kwix.impl import EmptyItemSource, BaseSelector, ok_text, cancel_text, BaseUi
 from kwix.l10n import _
-
+from typing import Protocol, TypeVar
 style_config_item_title_text = _('Theme').setup(ru_RU='Тема')
 
 
 def get_logo():
 	return Image.open(pkg_resources.resource_filename('kwix', 'logo.jpg'))
-
-
 
 class Ui(BaseUi):
 	def __init__(self, conf: Conf):
@@ -37,61 +36,84 @@ class Ui(BaseUi):
 		self._call_on_ready_listeners()
 	def _on_activate(self, *args: Any):
 		if not self.__fake_window:
-			self.__fake_window = Gtk.Window(application=self._app, title='fake window')
+			self.__fake_window = Gtk.ApplicationWindow(application=self._app, title='fake window')
+			self.__fake_window.present()
 			self.__fake_window.hide()
 	def run(self):
 		BaseUi.run(self)
-		GLib.timeout_add(10, self._process_mainloop)
+		def process_mainloop() -> None:
+			self._thread_router.process()
+			GLib.timeout_add(10, process_mainloop)	
+		process_mainloop()
 		self._app.run([])
 	def selector(self) -> kwix.Selector:
 		return Selector(self)
 	def dialog(self, create_dialog: Callable[[kwix.DialogBuilder], None]) -> None:
 		return Dialog(self, create_dialog)
-	def destroy(self):
-		GLib.idle_add(Gtk.main_quit)
+	def destroy(self) -> None:
+		self._exec_in_mainloop(self._app.quit)
 
 
 
 
 class ModalWindow:
 	def __init__(self, parent: Ui):
+		self._state = {}
 		self._parent = parent
 		self.title = 'kwix'
-		self._window = Gtk.Window(application=self._parent._app, title=self.title)
-		self._window.hide_on_delete = True
-		#self._window.set_deletable(False)
-		self._window.set_keep_above(True)
-		self._window.set_size_request(500, 500)
-		self._window.connect('key_press_event', self._on_key_press)
-		self._window.connect('delete_event', self._on_delete)
-		self._window.set_modal(True)
-		self._window.set_position(Gtk.WindowPosition.CENTER)
-		self._init_window()
+		self._window: Gtk.Window = cast(Gtk.Window, None)
+	def _ensure_window(self) -> Gtk.Window:
+		if not self._window:
+			self._window = self._build_window()
 		return self._window
-	def _on_key_press(self, widget: Gtk.Window, event, *args) -> None:
+
+	def _build_window(self) -> Gtk.Window:
+		result = Gtk.ApplicationWindow(application=self._parent._app, title=self.title)
+		result.hide_on_delete = True
+		#result.set_keep_above(True)
+		result.set_size_request(500, 500)
+		result.connect('key_press_event', self._on_key_press)
+		result.connect('delete_event', self._on_delete)
+		#result.set_modal(True)
+		result.set_position(Gtk.WindowPosition.CENTER)
+		return result
+
+	def _save_state(self):
+		pass
+	def _load_state(self):
+		pass
+	def _on_key_press(self, window: Gtk.Window, event: Gdk.EventKey) -> None:
 		if event.keyval == Gdk.KEY_Escape:
-			self._window.hide()
-	def _on_delete(self, *args):
-		self._window.hide()
+			self._hide()
+	def _on_delete(self, window: Gtk.Window, event: Gdk.EventKey):
+		window.hide()
 		return True
-	def _create_window(self):
-		self._window = Gtk.Window(application=self._parent._app, title=self.title)
-		self._window.set_hide_on_close(True)
-	def _show(self):
-		def f():
-			self._window.show_all()
-			self._window.present()
-			self._window.grab_focus()
-			self._window.set_focus()
-			self._window.activate()
-			self._window.set_focus(self._window)
-		GLib.idle_add(f)
 	def go(self) -> None:
-		self._show()
+		def do() -> None:
+			window = self._ensure_window()
+			window.show_all()
+			window.present()
+			window.present_with_time(0)
+			window.grab_focus()
+			window.set_focus()
+			window.activate()
+			window.set_focus(window)
+			window.set_accept_focus(True)
+			window.present()
+		self._parent._exec_in_mainloop(do)
 	def _hide(self) -> None:
-		GLib.idle_add(self._window.hide)
+		def do() -> None:
+			if self._window:
+				self._window.destroy()
+				self._window: Gtk.Window = cast(Gtk.Window, None)
+		self._parent._exec_in_mainloop(do)
 	def destroy(self):
-		GLib.idle_add(self._window.destroy)
+		def do() -> None:
+			if self._window:
+				self._window.destroy()
+				self._window: Gtk.Window = cast(Gtk.Window, None)
+				self._parent = cast(Ui, None) # ensure not usable after destroy
+		self._parent._exec_in_mainloop(do)
 
 
 
@@ -103,7 +125,9 @@ class Selector(ModalWindow, BaseSelector):
 		kwix.impl.BaseSelector.__init__(self, item_source)
 		self.result: Item | None = None
 
-	def _init_window(self) -> None:
+
+	def _build_window(self) -> Gtk.Window:
+		result = ModalWindow._build_window(self)
 
 		self._query_entry = Gtk.Entry()
 		self._query_entry.set_vexpand(False)
@@ -113,7 +137,9 @@ class Selector(ModalWindow, BaseSelector):
 		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 		vbox.pack_start(self._query_entry, True, True, 0)
 		vbox.pack_start(self._search_result_listview, True, True, 0)
-		self._window.add(vbox)
+		result.add(vbox)
+
+		return result
 
 
 
@@ -159,10 +185,13 @@ class Selector(ModalWindow, BaseSelector):
 
 
 		self._on_query_entry_type()
+	
+	def go(self, on_ok: Callable[[Item, int | None], Sequence[ItemAlt]] = lambda x, y: []):
+		def do()-> None:
+			ModalWindow.go(self)
+			self._query_entry.grab_focus()
+		self._parent._exec_in_mainloop(do)
 		
-
-	def _hide(self, event):
-		self._window.withdraw()
 
 	def _on_enter(self, alt_index: int = -1):
 		item: Item | None = self._get_selected_item()
@@ -254,10 +283,6 @@ class Selector(ModalWindow, BaseSelector):
 		self._result_listbox.selection_clear(0, tk.END)
 		self._result_listbox.selection_set(self._result_listbox.nearest(y))
 
-	def go(self, on_ok: Callable[[Item, int | None], Sequence[ItemAlt]] = lambda x, y: []):
-		ModalWindow.go(self)
-		self._query_entry.grab_focus()
-		
 	def _do_show(self):
 		super()._do_show()
 		self._search_entry.focus_set()
@@ -279,8 +304,8 @@ class Dialog(kwix.Dialog, ModalWindow):
 	def __init__(self, parent: Ui, create_dialog: Callable[[kwix.DialogBuilder], None]):
 		ModalWindow.__init__(self, parent)
 		self.create_dialog = create_dialog
-		self._init_window()
-	def _init_window(self):
+		self._build_window()
+	def _build_window(self):
 		self._window.bind('<Return>', cast(Any, self._ok_click))
 
 		frame = ttk.Frame(self._window, padding=8)
