@@ -20,3 +20,4 @@ todo:
 	ctrl+home & ctrl+end
 	restart action
 	rename kwix.Ui.destroy to stop?
+	rename kwix.ui.Selector.go to show

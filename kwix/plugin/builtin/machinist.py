@@ -41,7 +41,6 @@ class MachinistActionType(BaseActionType):
 			return value
 		builder.on_save(save)
 
-
 class BaseMachinist(BaseAction):
 	def _get_text(self) -> str:
 		raise NotImplementedError()
@@ -50,7 +49,11 @@ class BaseMachinist(BaseAction):
 	def _copy_text(self):
 		pyclip.copy(self._get_text())
 	def _paste_text(self):
-		old_clipboard_content = pyclip.paste()
+		old_clipboard_content = None
+		try:
+			old_clipboard_content = pyclip.paste()
+		except:
+			pass
 		self._copy_text()
 		from pynput.keyboard import Key, Controller
 		keyboard = Controller()
@@ -58,7 +61,10 @@ class BaseMachinist(BaseAction):
 		keyboard.press('v')
 		keyboard.release('v')
 		keyboard.release(Key.ctrl.value)
-		pyclip.copy(old_clipboard_content)
+		try:
+			pyclip.copy(old_clipboard_content)
+		except:
+			pass
 	def _create_default_items(self) -> list[BaseItem]:
 		type_alt: ItemAlt = BaseItemAlt(type_text, self._type_text)
 		copy_alt: ItemAlt = BaseItemAlt(copy_text, self._copy_text)
