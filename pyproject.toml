@@ -14,7 +14,8 @@ dependencies = [
 	"pyclip==0.7.0",
 	# tk
 	"tk==0.1.0",
-	"ttkthemes==3.2.2"
+	"ttkthemes==3.2.2",
+	"sv_ttk==2.5.5"
 ]
 
 [project.scripts]

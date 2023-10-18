@@ -13,6 +13,7 @@ from kwix import Item, ItemSource, Conf
 from kwix.impl import EmptyItemSource, BaseSelector, ok_text, cancel_text, BaseUi
 from ttkthemes import ThemedStyle
 from kwix.l10n import _
+import sv_ttk
 
 style_config_item_title_text = _('Theme').setup(ru_RU='Тема')
 
@@ -35,9 +36,10 @@ class Ui(BaseUi):
 		self.root.wm_iconphoto(False, ImageTk.PhotoImage(get_logo()))
 		self.root.title('Kwix!')
 		self.root.withdraw()
-		style_conf_item = conf.scope('ui').scope('tk', 'Tk').item('theme').setup(title = str(style_config_item_title_text), default = 'ubuntu')
-		style = ThemedStyle(self.root)
-		style.set_theme(str(style_conf_item.read()))
+		sv_ttk.set_theme('dark')
+		# style_conf_item = conf.scope('ui').scope('tk', 'Tk').item('theme').setup(title = str(style_config_item_title_text), default = 'ubuntu')
+		# style = ThemedStyle(self.root)
+		# style.set_theme(str(style_conf_item.read()))
 	def run(self):
 		BaseUi.run(self)
 		run_periodically(self.root, 10, self._process_mainloop)
