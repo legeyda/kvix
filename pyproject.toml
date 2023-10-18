@@ -15,7 +15,8 @@ dependencies = [
 	# tk
 	"tk==0.1.0",
 	"ttkthemes==3.2.2",
-	"customtkinter==5.2.1"
+	"customtkinter==5.2.1",
+	"CTkListbox==0.10"
 ]
 
 [project.scripts]
