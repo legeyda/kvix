@@ -13,8 +13,7 @@ dependencies = [
 	"PyYAML==6.0",
 	"pyclip==0.7.0",
 	# tk
-	"tk==0.1.0",
-	"ttkthemes==3.2.2"
+	"tk==0.1.0"
 ]
 
 [project.scripts]
