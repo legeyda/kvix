@@ -1,5 +1,4 @@
-import tkinter as tk
-from tkinter import ttk
+import kwix.ui.tk.uni.classic as uni
 from typing import Callable, Any, cast, Sequence
 
 import pkg_resources
@@ -11,7 +10,6 @@ import kwix.ui
 from kwix import ItemAlt, Item
 from kwix import Item, ItemSource, Conf
 from kwix.impl import EmptyItemSource, BaseSelector, ok_text, cancel_text, BaseUi
-from ttkthemes import ThemedStyle
 from kwix.l10n import _
 
 style_config_item_title_text = _('Theme').setup(ru_RU='Тема')
@@ -21,7 +19,7 @@ def get_logo():
 	return Image.open(pkg_resources.resource_filename('kwix', 'logo.jpg'))
 
 
-def run_periodically(root: tk.Tk, interval_ms: int, action):
+def run_periodically(root: uni.Tk, interval_ms: int, action):
 	def on_timer():
 		root.after(interval_ms, on_timer)
 		action()
@@ -31,13 +29,15 @@ def run_periodically(root: tk.Tk, interval_ms: int, action):
 class Ui(BaseUi):
 	def __init__(self, conf: Conf):
 		super().__init__()
-		self.root = tk.Tk()
+		self.root = uni.Tk()
 		self.root.wm_iconphoto(False, ImageTk.PhotoImage(get_logo()))
 		self.root.title('Kwix!')
 		self.root.withdraw()
-		style_conf_item = conf.scope('ui').scope('tk', 'Tk').item('theme').setup(title = str(style_config_item_title_text), default = 'ubuntu')
-		style = ThemedStyle(self.root)
-		style.set_theme(str(style_conf_item.read()))
+
+		#style_conf_item = conf.scope('ui').scope('tk', 'Tk').item('theme').setup(title = str(style_config_item_title_text), default = 'darcula')
+		style = uni.Style(self.root)
+		#style.theme_use(str(style_conf_item.read()))
+		style.theme_use('darcula')
 	def run(self):
 		BaseUi.run(self)
 		run_periodically(self.root, 10, self._process_mainloop)
@@ -62,8 +62,8 @@ class ModalWindow:
 		self.title = 'kwix'
 		self._create_window()
 	def _create_window(self):
-		self._window = tk.Toplevel(self.parent.root)
-		# self._widow.wm_iconphoto(False, ImageTk.PhotoImage(get_logo()))
+		self._window = uni.Toplevel(self.parent.root)
+		# self._widow.wm_iconphoto(False, Imageuni.PhotoImage(get_logo()))
 		#self._window.transient(self.parent.root)
 		self._window.title(self.title)
 		self._window.geometry('500x500')
@@ -110,35 +110,35 @@ class Selector(ModalWindow, BaseSelector):
 			self._window.bind(key, lambda x: self._on_popup_key_press()) 
 		
 
-		self._mainframe = ttk.Frame(self._window)
+		self._mainframe = uni.Frame(self._window)
 		self._mainframe.grid(column=0, row=0, sticky='nsew')
 		self._mainframe.rowconfigure(1, weight=1)
 		self._mainframe.columnconfigure(0, weight=1)
 
-		self._search_query = tk.StringVar()
+		self._search_query = uni.StringVar()
 		self._search_query.trace_add("write", lambda *_: self._on_query_entry_type())
-		self._search_entry = ttk.Entry(self._mainframe, textvariable=self._search_query)
+		self._search_entry = uni.Entry(self._mainframe, textvariable=self._search_query)
 		self._search_entry.grid(column=0, row=0, sticky='ew')
 		for key in ('<Up>', '<Down>', '<Control-Home>', '<Control-End>'):
 			self._search_entry.bind(key, self._on_search_entry_keys) # todo bind _window and route to widgets
 
-		result_frame = ttk.Frame(self._mainframe)
+		result_frame = uni.Frame(self._mainframe)
 		result_frame.rowconfigure(0, weight=1)
 		result_frame.columnconfigure(0, weight=1)
 		result_frame.grid(column=0, row=1, sticky='nsew')
 
-		self._result_list = tk.StringVar()
-		self._result_listbox = tk.Listbox(result_frame, listvariable=self._result_list, takefocus=False, selectmode='browse')
+		self._result_list = uni.StringVar()
+		self._result_listbox = uni.Listbox(result_frame, listvariable=self._result_list, takefocus=False, selectmode='browse')
 		self._result_listbox.grid(column=0, row=0, sticky='nsew')
 		self._result_listbox.bind("<Button-1>", self._on_list_left_click)
 		self._result_listbox.bind("<Button-3>", self._on_list_right_click)
 
-		scrollbar = ttk.Scrollbar(result_frame, orient='vertical')
+		scrollbar = uni.Scrollbar(result_frame, orient='vertical')
 		scrollbar.grid(column=1, row=0, sticky='nsew')
 
 		# bind scrollbar to result list
 		self._result_listbox.config(yscrollcommand=scrollbar.set)
-		scrollbar.config(command = self._result_listbox.yview)
+		scrollbar.configure(command = self._result_listbox.yview)
 
 
 		self._on_query_entry_type()
@@ -209,7 +209,7 @@ class Selector(ModalWindow, BaseSelector):
 	def _show_popup_menu(self, item: Item, x: int, y: int) -> None:
 		alts: list[ItemAlt] = item.alts
 		if len(alts) >= 0:
-			popup_menu = tk.Menu(self._result_listbox, tearoff=0)
+			popup_menu = uni.Menu(self._result_listbox, tearoff=0)
 			popup_menu.bind("<FocusOut>", lambda event: popup_menu.destroy())
 			for alt in alts:
 				def execute(alt: ItemAlt=alt):
@@ -234,7 +234,7 @@ class Selector(ModalWindow, BaseSelector):
 
 
 	def _select_item_at_y_pos(self, y: int):
-		self._result_listbox.selection_clear(0, tk.END)
+		self._result_listbox.selection_clear(0, uni.END)
 		self._result_listbox.selection_set(self._result_listbox.nearest(y))
 
 	def go(self, on_ok: Callable[[Item, int | None], Sequence[ItemAlt]] = lambda x, y: []):
@@ -252,7 +252,7 @@ class Selector(ModalWindow, BaseSelector):
 		self._item_list = self.item_source.search(self._search_query.get())
 		self._result_list.set(cast(Any, [str(item) for item in self._item_list]))
 		if self._item_list:
-			self._result_listbox.select_clear(0, tk.END)
+			self._result_listbox.select_clear(0, uni.END)
 			self._result_listbox.selection_set(0)
 		self._result_listbox.see(0)
 
@@ -266,12 +266,12 @@ class Dialog(kwix.Dialog, ModalWindow):
 	def _init_window(self):
 		self._window.bind('<Return>', cast(Any, self._ok_click))
 
-		frame = ttk.Frame(self._window, padding=8)
+		frame = uni.Frame(self._window, padding=8)
 		frame.grid(column=0, row=0, sticky='nsew')
 		frame.columnconfigure(0, weight=1)
 		frame.rowconfigure(0, weight=1)
 
-		data_frame = ttk.Frame(frame)
+		data_frame = uni.Frame(frame)
 		data_frame.grid(column=0, row=0, sticky='nsew')
 
 		self.builder = DialogBuilder(data_frame)
@@ -280,15 +280,15 @@ class Dialog(kwix.Dialog, ModalWindow):
 		if len(children) >= 2:
 			self._first_entry = children[1]
 		
-		control_frame = ttk.Frame(frame)
+		control_frame = uni.Frame(frame)
 		control_frame.rowconfigure(0, weight=1)
 		control_frame.columnconfigure(0, weight=1)
 		control_frame.grid(column=0, row=1, sticky='nsew')
 
-		ok_button = ttk.Button(control_frame, text=str(ok_text), command=self._ok_click)
+		ok_button = uni.Button(control_frame, text=str(ok_text), command=self._ok_click)
 		ok_button.grid(column=1, row=0, padx=4)
 
-		cancel_button = ttk.Button(control_frame, text=str(cancel_text), command=self.hide)
+		cancel_button = uni.Button(control_frame, text=str(cancel_text), command=self.hide)
 		cancel_button.grid(column=2, row=0, padx=4)
 
 	def _ok_click(self, *args):
@@ -316,7 +316,7 @@ class Dialog(kwix.Dialog, ModalWindow):
 
 
 class DialogEntry(kwix.DialogEntry):
-	def __init__(self, label: ttk.Label, string_var: tk.StringVar):
+	def __init__(self, label: uni.Label, string_var: uni.StringVar):
 		self._label = label
 		self._string_var = string_var
 
@@ -335,7 +335,7 @@ class DialogEntry(kwix.DialogEntry):
 
 
 class DialogBuilder(kwix.DialogBuilder):
-	def __init__(self, root_frame: ttk.Frame):
+	def __init__(self, root_frame: uni.Frame):
 		super().__init__()
 		self._root_frame = root_frame
 		self._widget_count = 0	
@@ -343,18 +343,18 @@ class DialogBuilder(kwix.DialogBuilder):
 	def create_entry(self, id: str, title: str) -> DialogEntry:
 		self._root_frame.columnconfigure(0, weight=1)
 
-		label = ttk.Label(self._root_frame, text=title)
+		label = uni.Label(self._root_frame, text=title)
 		label.grid(column=0, row=self._widget_count, sticky='ew')
 		self._widget_count += 1
 
-		string_var = tk.StringVar(self._root_frame)
-		entry = ttk.Entry(self._root_frame, textvariable=string_var)
+		string_var = uni.StringVar(self._root_frame)
+		entry = uni.Entry(self._root_frame, textvariable=string_var)
 		entry.grid(column=0, row=self._widget_count, sticky='ew')
 		self._widget_count += 1
 		if self._widget_count == 2:
 			entry.focus_set()
 
-		separator = ttk.Label(self._root_frame, text='')
+		separator = uni.Label(self._root_frame, text='')
 		separator.grid(
 			column=0, row=self._widget_count, sticky='ew')
 		self._widget_count += 1
