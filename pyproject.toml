@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-kwix = "kwix:main"
+kwix = "kwix.app:main"
 
 [build-system]
 requires = [ "setuptools>=64", "setuptools-git-versioning<2", ]
@@ -25,3 +25,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools-git-versioning]
 enabled = true
+
+[tool.pyproject-appimage]
+script = "kwix"
+output = "dist/MyApp.AppImage"
