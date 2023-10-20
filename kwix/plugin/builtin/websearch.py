@@ -18,7 +18,7 @@ class Action(BaseAction):
 	def _search_google(self, query: str) -> None:
 		webbrowser.open('https://www.google.com/search?btnI=1&q=' + urlparse.quote(query))
 	def _search_duck(self, query: str) -> None:
-		webbrowser.open('https://duckduckgo.com/?q=' + urlparse.quote('\\' + query))
+		webbrowser.open('https://duckduckgo.com/?q=' + urlparse.quote('\\ ' + query))
 	def search(self, query: str) -> list[Item]:
 		if not query:
 			return []
