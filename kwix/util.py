@@ -123,31 +123,59 @@ _sentinel = Sentinel()
 
 T = TypeVar("T")
 class Propty(Generic[T]):
+	'''
+	Usage variants:
+	x = Propty(str) # just wrapper around self._x
+	x = Propty(dict, default_supplier=lambda: {'a':1}, private_name='_private_x_value', on_change='_on_change_x') # like previous, with additional customizations
+	x = Propty(str, getter = _get_x, setter = _set_x) # alternative to x = property(fget=_get_x, fset=_set_x)
+	x = Propty(str, getter = '_get_x', setter = '_set_x') # just like previous but supports override of getter and setter in child classes
+	
+	'''
+	@staticmethod
+	def create_prototype(**fix_kwargs: Any):
+		def result(*args: Any, **kwargs: Any):
+			kwargs.update(fix_kwargs)
+			return Propty(*args, **kwargs)
+		return result
+
 	def __init__(self, 
 	      type: Type[T] = cast(Type[T], None),
+		  # default value supply
 	      default_value: T = cast(T, _sentinel),
-	      default_supplier: Callable[[], T] = cast(Callable[[], T], None),
+	      default_supplier: Callable[[], T] = cast(Callable[[], T], None), # type by default
+		  value_predicate: Callable[[T], bool] = lambda x: x and True or False,
+		  # change notification
 		  on_change: str | bool | Callable[[Any, T], None] = False,
-		  private_name: str = '',
+		  comparator: Callable[[T, T], bool] = lambda a, b: True,
+		  #
 		  type_check: bool = False,
 		  writeable: bool = True,
 		  required: bool = False,
-		  getter: Callable[[Any], T] | None = None,
-		  setter: Callable[[Any, T], None] | None = None):
+		  # storage
+		  private_name: str = '',
+		  getter: str | Callable[[Any], T] | None = None,
+		  setter: str | Callable[[Any, T], None] | None = None):
 		self._name = ''
 		self._type = type
 		if not writeable and setter:
 			raise RuntimeError('Propty: not writeable and setter')
 		if required and bool(default_supplier):
 			raise RuntimeError('Propty: required and default_supplier')
+		# default value supplier
 		self._default_supplier = default_supplier or ((lambda: default_value) if default_value is not _sentinel else None) or type or (lambda: None)
+		self._value_predicate = value_predicate
+		# change notificate
 		self._on_change = on_change
-		self._private_name = private_name
+		self._comparator = comparator
+		#self._require_listener_exists = self._on_change
+		#
 		if type_check and not type:
 			raise RuntimeError('Propty: type_check and not type')
 		self._type_check = type_check
 		self._writeable = writeable
 		self._required = required
+		# storage
+		self._private_name = private_name
 		self._getter = getter or self._builtin_getter
 		self._setter = setter or self._builtin_setter
 	def __set_name__(self, owner: Any, name: str):
@@ -157,58 +185,62 @@ class Propty(Generic[T]):
 		if not self._private_name:
 			self._private_name = '_' + name
 	def __set__(self, obj: Any, value: T):
-		self._assert_obj(obj)
 		if not self._writeable:
 			raise AttributeError('property for ' + self._name + ' is not writeable')
 		self._assert_type(value)
-		if self._on_change:
-			old_value: T = self._get_silent(obj, True)
-			if old_value is not value:
-				self._call_on_change(obj, value)
-			self._setter(obj, value)
-		else:
-			self._setter(obj, value)
+		self._maybe_notify_change_listeners(obj, value)
+		self._invoke_method(self._setter, obj, value)
 	def _assert_type(self, value: T):
 		if not self._type_check:
 			return
 		assert self._type
 		if not isinstance(value, self._type):
 			raise AttributeError('property ' + self._name + ': unexpected type')
-	def _call_on_change(self, obj: Any, value: T) -> None:
-		if False is self._on_change:
+	def _maybe_notify_change_listeners(self, obj: Any, value: T) -> None:
+		'invoke listeners, if they are configured and value really changed'
+		# check if there are change listeners
+		if not self._on_change:
 			return
-		if isinstance(self._on_change, str):
-			if not hasattr(obj, self._on_change):
-				raise RuntimeError('method ' + self._on_change + ' not found')
-			func = cast(Callable[[T], None], getattr(obj, self._on_change))
+		# check if value has really changed
+		self._assert_obj(obj)
+		old_value: T = self.__get__(obj)
+		if self._comparator(old_value, value):
+			return
+		# invoke listener
+		self._invoke_method(self._on_change, obj, value)
+	def _invoke_method(self, method: Any, obj: Any, *args: Any, **kwargs: Any):
+		if isinstance(method, str) and method:
+			self._assert_obj(obj)
+			if not hasattr(obj, method):
+				raise RuntimeError('method ' + method + ' not found')
+			func = cast(Callable[[T], None], getattr(obj, method))
 			if not callable(func):
-				raise RuntimeError('attr ' + self._on_change + ' expected to be callable')
-			func(value)
-		elif callable(self._on_change):
-			self._on_change(obj, value)
+				raise RuntimeError('attr ' + method + ' expected to be callable')
+			return func(*args, **kwargs)
+		elif callable(method):
+			self._assert_obj(obj)
+			return method(obj, *args, **kwargs)
 		else:
-			raise AssertionError('callable expected')
+			raise AssertionError('callable or non-empty string expected')
 	def _builtin_setter(self, obj: Any, value: T) -> None:
 		setattr(obj, self._private_name, value)
 	def __get__(self, obj: Any, objtype: Any = None) -> T:
-		self._assert_obj(obj)
-		result = self._getter(obj)
+		result = self._invoke_method(self._getter, obj)
 		self._assert_type(result)
-		setattr(obj, self._private_name, result)
+		if not self._value_predicate(cast(T, result)):
+			result = self._default_supplier()
+			# todo maybe self._assert_type(result)
+			self._invoke_method(self._setter, obj, result)
 		return result
-	def _assert_obj(self, obj: Any):
+	def _assert_obj(self, obj: Any) -> Any:
 		if not obj:
 			raise AttributeError("Propty is for instances only")
+		return obj
 	def _builtin_getter(self, obj: Any) -> T:
-		return self._get_silent(obj)
-	def _get_silent(self, obj: Any, silent: bool = False) -> T:
 		self._assert_obj(obj)
 		if not hasattr(obj, self._private_name):
-			if self._required:
-				if silent:
-					return cast(T, None)
-				raise RuntimeError('property is required')
-			return self._default_supplier()
+			#return self._default_supplier()
+			return cast(T, None)
 		return getattr(obj, self._private_name)
 
 
