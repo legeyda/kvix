@@ -1,9 +1,16 @@
 
 from __future__ import annotations
 
+import tkinter as tk
 from tkinter import Misc as _TkMisc, Tk as _Tk, Listbox as _TkListbox, Entry as _TkEntry, Button as _TkButton, Scrollbar as _TkScrollbar
 from tkinter.ttk import Style as _TkStyle
 from typing import Any as _Any, cast as _cast, Generator as _Generator
+
+from kwix.l10n import _
+
+copy_text  = _("Copy") .setup(ru_RU="Копировать", de_DE='Kopieren')
+cut_text   = _("Cut")  .setup(ru_RU="Вырезать",   de_DE='Ausschneiden')
+paste_text = _("Paste").setup(ru_RU="Вставить",   de_DE='Einfügen')
 
 _style_singleton: BaseStyle = None
 
@@ -16,10 +23,25 @@ class Listbox(_TkListbox):
 		_TkListbox.__init__(self, master, cnf, **kw)
 		_apply_widget_style(self)
 
+class Menu(tk.Menu):
+	def __init__(self, master: tk.Tk | None=None, cnf: dict[str, _Any]={}, **kw: _Any):
+		tk.Menu.__init__(self, master, cnf, **kw)
+		_apply_widget_style(self)
+
+
 class Entry(_TkEntry):
-	def __init__(self, master=None, cnf={}, **kw):
+	def __init__(self, master: tk.Tk | None=None, cnf: dict[str, _Any]={}, **kw: _Any):
 		_TkEntry.__init__(self, master, cnf, **kw)
 		_apply_widget_style(self)
+		self._init_menu()
+	def _init_menu(self):
+		self._popup_menu = Menu(self, tearoff=False)
+		self._popup_menu.add_command(label=str(copy_text), command=lambda: self.event_generate("<<Copy>>"))
+		self._popup_menu.add_command(label=str(cut_text), command=lambda: self.event_generate("<<Cut>>"))
+		self._popup_menu.add_separator()
+		self._popup_menu.add_command(label=str(paste_text), command=lambda: self.event_generate("<<Paste>>"))
+		self.bind("<Button-3>", lambda event: self._popup_menu.post(event.x_root, event.y_root))
+
 
 class Button(_TkButton):
 	def __init__(self, master=None, cnf={}, **kw):
@@ -75,6 +97,9 @@ class Theme:
 			_cast(_TkButton, widget).configure(bg=self.button_back_color, fg=self.button_text_color)
 		elif 'Scrollbar' == widget.winfo_class():
 			_cast(_TkScrollbar, widget).configure(background=self.button_back_color)
+		elif 'Menu' == widget.winfo_class():
+			_cast(tk.Menu, widget).configure(background=self.button_back_color, foreground=self.button_text_color,
+									activebackground=self.select_back_color, activeforeground=self.button_text_color)
 		
 class BaseStyle:
 	def __init__(self):
