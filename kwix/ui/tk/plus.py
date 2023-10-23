@@ -10,6 +10,7 @@ from kwix.l10n import _
 
 copy_text  = _("Copy") .setup(ru_RU="Копировать", de_DE='Kopieren')
 cut_text   = _("Cut")  .setup(ru_RU="Вырезать",   de_DE='Ausschneiden')
+del_text   = _("Delete")  .setup(ru_RU="Удалить",   de_DE='Entfernen')
 paste_text = _("Paste").setup(ru_RU="Вставить",   de_DE='Einfügen')
 
 _style_singleton: BaseStyle = None
@@ -38,10 +39,14 @@ class Entry(_TkEntry):
 		self._popup_menu = Menu(self, tearoff=False)
 		self._popup_menu.add_command(label=str(copy_text), command=lambda: self.event_generate("<<Copy>>"))
 		self._popup_menu.add_command(label=str(cut_text), command=lambda: self.event_generate("<<Cut>>"))
+		self._popup_menu.add_command(label=str(del_text), command=self._delete)
 		self._popup_menu.add_separator()
 		self._popup_menu.add_command(label=str(paste_text), command=lambda: self.event_generate("<<Paste>>"))
-		self.bind("<Button-3>", lambda event: self._popup_menu.post(event.x_root, event.y_root))
-
+		self.bind("<Button-3>", lambda event: self._popup_menu.tk_popup(event.x_root, event.y_root))
+	def _delete(self):
+		if not self.selection_present():
+			return
+		self.delete(self.index('sel.first'), self.index('sel.last'))
 
 class Button(_TkButton):
 	def __init__(self, master=None, cnf={}, **kw):
