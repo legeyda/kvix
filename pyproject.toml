@@ -23,6 +23,9 @@ kwix = "kwix.app:main"
 requires = [ "setuptools>=64", "setuptools-git-versioning<2", ]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.package-dir]
+kwix = "src/kwix"
+
 [tool.setuptools-git-versioning]
 enabled = true
 
