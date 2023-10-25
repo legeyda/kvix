@@ -2,7 +2,6 @@
 
 
 import base64
-import build
 import pyclip
 
 from kwix import ActionType

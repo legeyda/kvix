@@ -33,3 +33,4 @@ todo:
 	rename kwix.ui.Selector.go to show
 	--collect-data TKinterModernThemes
 	if activation event fired when window already on screen, activate it and bring to foreground
+	fix freeze when interrupt signal received (Ctrl+C in shell)

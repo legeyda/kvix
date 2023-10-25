@@ -1,0 +1,56 @@
+#!/usr/bin/env sh
+set -eu
+
+
+function main() {
+	local work_dir=$(create-temp-dir)
+	echo "working directory is $work_dir"
+
+	clean
+	pyproject-build
+	pyinstaller-build-native
+	pyinstaller-build-windows
+}
+
+function create-temp-dir() {
+	mktemp -d -t "kwix-run-build.$(date +%Y-%m-%d_%H-%M-%S).XXXX"
+}
+
+function clean() {
+	echo 'clean project directory'
+	rm -rf ./build ./dist
+}
+
+function pyproject-build() {
+	local venv_path="$work_dir/venv/pyproject-build"
+	echo "building sdist and wheel in $venv_path"
+	create-venv "$venv_path"
+	"$venv_path/bin/pip3" install build
+	"$venv_path/bin/pyproject-build"
+}
+
+function create-venv() {
+	local path="$1"
+	mkdir -p "$path"
+	python3 -m venv "$path"
+}
+
+function get-project-version() {
+	local prefix=dist/kwix-
+	local suffix=.tar.gz
+	ls "$prefix"*"$suffix" | sed -E "s|^${prefix}(.*?)${suffix}$|\1|g"
+}
+
+function pyinstaller-build-native() {
+	local venv_path="$work_dir/venv/pyinstaller-build"
+	echo "building pyinstaller executable in $venv_path"
+	create-venv "$venv_path"
+	"$venv_path/bin/pip3" install pyinstaller .
+	"$venv_path/bin/pyinstaller" pyinstaller.spec
+}
+
+function pyinstaller-build-windows() {
+
+}
+
+main "$@"

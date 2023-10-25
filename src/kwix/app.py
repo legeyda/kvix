@@ -1,22 +1,24 @@
 
+import sys
+from argparse import ArgumentParser
+from enum import Enum
 from typing import cast
 
 import pynput
 
 import kwix.impl
-import kwix.plugin
 import kwix.ui.tk
 import kwix.ui.tray
 from kwix import Action, ActionRegistry, Context, Item
 from kwix.conf import Conf, StorConf
-from kwix.impl import BaseItem, BaseItemAlt, FuncItemSource, BaseActionRegistry
+from kwix.impl import BaseActionRegistry, BaseItem, BaseItemAlt, FuncItemSource
 from kwix.l10n import _
-from kwix.stor import YamlFile
-from kwix.util import get_config_dir, get_data_dir, get_cache_dir, ensure_type, apply_template
 from kwix.plugin import Plugin as PanPlugin
-from argparse import ArgumentParser
-from kwix.remote import Server, Client as RemoteClient
-from enum import Enum
+from kwix.remote import Client as RemoteClient
+from kwix.remote import Server
+from kwix.stor import YamlFile
+from kwix.util import (apply_template, ensure_type, get_cache_dir,
+                       get_config_dir, get_data_dir)
 
 activate_action_text = _('Activate').setup(ru_RU='Выпуолнить', de_DE='Aktivieren')
 edit_action_text = _('Edit Action: {{action_title}} ({{action_type_title}})').setup(ru_RU='Редактировать действие "{{action_title}}" ({{action_type_title}})', de_DE='Aktion Bearbeiten: "{{action_title}}" ({{action_type_title}})')
@@ -192,5 +194,5 @@ def main(*args: str):
 		print('already running')
 
 if __name__ == '__main__':
-	main(*sys.argv)
+	main(*(sys.argv[1:]))
 	
