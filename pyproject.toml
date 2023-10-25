@@ -21,7 +21,8 @@ kwix = "kwix.app:main"
 
 [build-system]
 requires = [ "setuptools>=64", "setuptools-git-versioning<2", ]
-build-backend = "setuptools.build_meta"
+build-backend = "backend"
+backend-path = ["_custom_build"]
 
 [tool.setuptools.package-dir]
 kwix = "src/kwix"
