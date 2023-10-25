@@ -30,5 +30,6 @@ kwix = "src/kwix"
 enabled = true
 
 [tool.pyproject-appimage]
-script = "kwix"
-output = "dist/MyApp.AppImage"
+script = kwix
+icon = "src/kwix/logo.jpg"
+output = "dist/kwix.AppImage"
