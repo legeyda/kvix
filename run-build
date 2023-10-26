@@ -1,56 +1,60 @@
 #!/usr/bin/env sh
 set -eu
 
-
-function main() {
-	local work_dir=$(create-temp-dir)
+main() {
+	local work_dir=$(create_temp_dir)
 	echo "working directory is $work_dir"
 
 	clean
-	pyproject-build
-	pyinstaller-build-native
-	pyinstaller-build-windows
+	build_pyproject
+	# build_pyinstaller_native
+	build_appimage
+	#build_pyinstaller_windows
 }
 
-function create-temp-dir() {
+create_temp_dir() {
 	mktemp -d -t "kwix-run-build.$(date +%Y-%m-%d_%H-%M-%S).XXXX"
 }
 
-function clean() {
+clean() {
 	echo 'clean project directory'
 	rm -rf ./build ./dist
 }
 
-function pyproject-build() {
-	local venv_path="$work_dir/venv/pyproject-build"
+build_pyproject() {
+	local venv_path="$work_dir/venv/build_pyproject"
 	echo "building sdist and wheel in $venv_path"
-	create-venv "$venv_path"
-	"$venv_path/bin/pip3" install build
+	create_venv "$venv_path"
+	"$venv_path/bin/pip3" install 'build==1.0.3'
 	"$venv_path/bin/pyproject-build"
 }
 
-function create-venv() {
+create_venv() {
 	local path="$1"
 	mkdir -p "$path"
 	python3 -m venv "$path"
 }
 
-function get-project-version() {
-	local prefix=dist/kwix-
-	local suffix=.tar.gz
-	ls "$prefix"*"$suffix" | sed -E "s|^${prefix}(.*?)${suffix}$|\1|g"
-}
-
-function pyinstaller-build-native() {
-	local venv_path="$work_dir/venv/pyinstaller-build"
+build_pyinstaller_native() {
+	local venv_path="$work_dir/venv/build_pyinstaller_native"
 	echo "building pyinstaller executable in $venv_path"
-	create-venv "$venv_path"
-	"$venv_path/bin/pip3" install pyinstaller .
+	create_venv "$venv_path"
+	"$venv_path/bin/pip3" install 'pyinstaller==6.1.0' .
 	"$venv_path/bin/pyinstaller" pyinstaller.spec
 }
 
-function pyinstaller-build-windows() {
+build_appimage() {
+	# local venv_path="$work_dir/venv/build_appimage"
+	# echo "building appimage executable in $venv_path"
+	# create_venv "$venv_path"
+	# "$venv_path/bin/pip3" install 'pyproject-appimage==3.0'
+	# "$venv_path/bin/pyproject-appimage"
+	echo 'build appimage executable not implemented'
 
+}
+
+build_pyinstaller_windows() {
+	echo 'build pyinstaller executable for windows not implemented'
 }
 
 main "$@"
