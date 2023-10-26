@@ -33,3 +33,9 @@ enabled = true
 script = "kwix"
 icon = "src/kwix/logo.jpg"
 output = "dist/kwix.AppImage"
+
+# for cx_freeze
+#[tool.distutils.build_exe]
+#excludes = ["unittest"]
+#path = ["src"]
+#zip_include_packages = ["pynput", "collections"]
