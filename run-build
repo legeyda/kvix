@@ -7,8 +7,8 @@ main() {
 
 	clean
 	build_pyproject
-	# build_pyinstaller_native
-	build_appimage
+	build_pyinstaller_native
+	#build_appimage
 	#build_pyinstaller_windows
 }
 
@@ -39,7 +39,7 @@ build_pyinstaller_native() {
 	local venv_path="$work_dir/venv/build_pyinstaller_native"
 	echo "building pyinstaller executable in $venv_path"
 	create_venv "$venv_path"
-	"$venv_path/bin/pip3" install 'pyinstaller==6.1.0' .
+	"$venv_path/bin/pip3" install 'pyinstaller==6.1.0' 'setuptools-git-versioning==1.13.5' .
 	"$venv_path/bin/pyinstaller" pyinstaller.spec
 }
 
