@@ -33,3 +33,13 @@ enabled = true
 script = "kwix"
 icon = "src/kwix/logo.jpg"
 output = "dist/kwix.AppImage"
+
+[tool.briefcase]
+project_name = "kwix"
+bundle = "com.legeyda"
+version = "0.0.1"
+
+[tool.briefcase.app.kwix]
+formal_name = "kwix"
+description = "kwix quick actions for desktop"
+sources = ['src/kwix']

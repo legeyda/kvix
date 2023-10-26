@@ -6,14 +6,16 @@ main() {
 	echo "working directory is $work_dir"
 
 	clean
-	build_pyproject
-	build_pyinstaller_native
+	#build_pyproject
+	#build_pyinstaller_native
 	#build_appimage
 	#build_pyinstaller_windows
+	build_briefcase_appimage
+	
 }
 
 create_temp_dir() {
-	mktemp -d -t "kwix-run-build.$(date +%Y-%m-%d_%H-%M-%S).XXXX"
+	mktemp -d -t "kwix-build.$(date +%Y-%m-%d_%H-%M-%S).XXXX"
 }
 
 clean() {
@@ -50,6 +52,20 @@ build_appimage() {
 	# "$venv_path/bin/pip3" install 'pyproject-appimage==3.0'
 	# "$venv_path/bin/pyproject-appimage"
 	echo 'build appimage executable not implemented'
+
+}
+
+build_briefcase_appimage() {
+	local venv_path="$work_dir/venv/build_briefcase_appimage"
+	echo "building appimage with build_briefcase executable in $venv_path"
+
+	# sudo apt install -y pkg-config docker-buildx libcairo2-dev
+	create_venv "$venv_path"
+	"$venv_path/bin/pip3" install pkgconfig 'briefcase==0.3.16'
+
+	# briefcase creae + build + package
+	"$venv_path/bin/briefcase" package linux appimage
+	
 
 }
 
