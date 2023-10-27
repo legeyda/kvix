@@ -1,30 +1,17 @@
 
-import logging
-import os.path
+import io
 import platform
-import sys
-from pathlib import Path
+from contextlib import redirect_stdout
 
-import setuptools_git_versioning
+from setuptools_git_versioning import __main__ as print_project_version
 
 pythonpath = ['src']
 
-def find_sub_modules(parent_module_full_name: str):
-	parent_module_sub_path = os.path.join(*parent_module_full_name.split('.'))
-	for root in pythonpath:
-		parent_module_path = os.path.join(root, parent_module_sub_path)
-		for candidate in os.scandir(Path(parent_module_path)):
-			file = Path(os.path.join(root, parent_module_sub_path, os.path.basename(candidate)))
-			if file.is_file():
-				yield parent_module_full_name + '.' + os.path.splitext(file.name)[0]
-
 def get_project_version() -> str:
-	parser = setuptools_git_versioning._parser()
-	namespace = parser.parse_args()
-	log_level = setuptools_git_versioning.VERBOSITY_LEVELS.get(namespace.verbose, logging.DEBUG)
-	logging.basicConfig(level=log_level, format=setuptools_git_versioning.LOG_FORMAT, stream=sys.stderr)
-	return str(setuptools_git_versioning.get_version(root=namespace.root))
-	
+	with io.StringIO() as buf, redirect_stdout(buf):
+		print_project_version()
+		return buf.getvalue().strip()
+
 def get_build_os():
 	result = platform.system().lower()
 	if 'linux' == result:
@@ -32,17 +19,14 @@ def get_build_os():
 	raise Exception('unknown platform.system() value: ' + platform.system())
 
 def get_build_arch():
-	result = platform.machine().lower()
-	if 'x86_64' == result:
-		return result
-	raise Exception('unknown platform.machine() value: ' + platform.machine())
+	return platform.machine().lower()
 
 a = Analysis(
 	['src/kwix/app.py'],
 	pathex=[],
 	binaries=[('src/kwix/logo.jpg', 'kwix')],
 	datas=[],
-	hiddenimports=list(find_sub_modules('kwix.plugin.builtin')) + ['PIL._tkinter_finder'],
+	hiddenimports=['PIL._tkinter_finder'],
 	hookspath=[],
 	hooksconfig={},
 	runtime_hooks=[],
