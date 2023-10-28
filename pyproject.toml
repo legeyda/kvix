@@ -8,7 +8,7 @@ dependencies = [
 	"funcy==2.0",
 	"pynput==1.7.6",
 	"pystray==0.19.4",
-	"pygobject==3.44.1",
+	"pygobject==3.46.0",
 	"pkgconfig==1.5.5",
 	"PyYAML==6.0.1",
 	# tk
@@ -19,7 +19,7 @@ dependencies = [
 kwix = "kwix.app:main"
 
 [build-system]
-requires = [ "setuptools>=64", "setuptools-git-versioning<2", ]
+requires = [ "setuptools>=64", "setuptools-git-versioning==1.13.5", ]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.package-dir]

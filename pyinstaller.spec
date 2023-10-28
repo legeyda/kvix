@@ -13,10 +13,7 @@ def get_project_version() -> str:
 		return buf.getvalue().strip()
 
 def get_build_os():
-	result = platform.system().lower()
-	if 'linux' == result:
-		return result
-	raise Exception('unknown platform.system() value: ' + platform.system())
+	return platform.system().lower()
 
 def get_build_arch():
 	return platform.machine().lower()
