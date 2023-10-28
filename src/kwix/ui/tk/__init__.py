@@ -84,6 +84,7 @@ class ModalWindow:
 		self._window.deiconify()
 		self._window.title(self.title) # todo: _tkinter.TclError: bad window path name ".!toplevel"
 		self._window.focus_set()
+		self.parent.root.lift()
 	def hide(self) -> None:
 		self.parent._exec_in_mainloop(self._do_hide)
 	def _do_hide(self) -> None:
