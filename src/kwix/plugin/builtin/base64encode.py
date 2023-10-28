@@ -2,7 +2,6 @@
 
 
 import base64
-import pyclip
 
 from kwix import ActionType
 from kwix.impl import BaseActionType, BasePlugin
@@ -10,7 +9,7 @@ from kwix.plugin.builtin.machinist import BaseMachinist
 
 class Action(BaseMachinist):
 	def _get_text(self) -> str:
-		return base64.b64encode(pyclip.paste()).decode('UTF-8')
+		return base64.b64encode(self.action_type.context.ui.paste_from_clipboard()).decode('UTF-8')
 
 class Plugin(BasePlugin):
 	def _create_single_action_type(self) -> ActionType:

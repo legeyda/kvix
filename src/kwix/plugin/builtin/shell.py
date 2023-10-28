@@ -2,7 +2,7 @@ from kwix import ActionType, Context
 from kwix.impl import BaseAction, BaseActionType, BasePlugin
 from pathlib import Path
 from kwix.l10n import _
-import pyclip, subprocess, chevron, shlex
+import subprocess, chevron, shlex
 
 import os
 
@@ -18,7 +18,7 @@ class Action(BaseAction):
 		env['KWIX_CLIPBOARD'] = ''
 		clipboard_bytes = b''
 		try:
-			clipboard_bytes = pyclip.paste()
+			clipboard_bytes = self.action_type.context.ui.paste_from_clipboard()
 			env['KWIX_CLIPBOARD'] = str(clipboard_bytes.decode('UTF-8'))
 		except:
 			pass

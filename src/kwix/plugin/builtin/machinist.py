@@ -1,7 +1,7 @@
 
 from typing import Any, cast
 
-import pynput, pyclip
+import pynput
 
 from kwix import Action, ActionType, Context, DialogBuilder, ItemAlt
 from kwix.impl import BaseAction, BaseActionType, BaseItem, BasePlugin, BaseItemAlt
@@ -47,11 +47,11 @@ class BaseMachinist(BaseAction):
 	def _type_text(self):
 		pynput.keyboard.Controller().type(self._get_text())
 	def _copy_text(self):
-		pyclip.copy(self._get_text())
+		self.action_type.context.ui.copy_to_clipboard(self._get_text().encode())
 	def _paste_text(self):
 		old_clipboard_content = None
 		try:
-			old_clipboard_content = pyclip.paste()
+			old_clipboard_content = self.action_type.context.ui.paste_from_clipboard()
 		except:
 			pass
 		self._copy_text()
@@ -62,7 +62,7 @@ class BaseMachinist(BaseAction):
 		keyboard.release('v')
 		keyboard.release(Key.ctrl.value)
 		try:
-			pyclip.copy(old_clipboard_content)
+			self.action_type.context.ui.copy_to_clipboard(old_clipboard_content)
 		except:
 			pass
 	def _create_default_items(self) -> list[BaseItem]:

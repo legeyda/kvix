@@ -9,8 +9,6 @@ from time import sleep
 from types import UnionType
 from typing import Any, Callable, Generic, Type, TypeAlias, TypeVar, cast
 
-import pyclip
-
 
 class CallableWrapper:
 	def __init__(self, func: Callable[[], None]):
@@ -269,10 +267,3 @@ def apply_template(template: str, **values: str) -> str:
 		result = result.replace('{{' + str(key) + '}}', str(value))
 	return result
 
-
-def paste_str() -> str:
-	try:
-		return pyclip.paste().decode('UTF-8')
-	except Exception as e:
-		print(e)
-	return ''

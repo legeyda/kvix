@@ -53,7 +53,12 @@ class Ui(BaseUi):
 		self._exec_in_mainloop(self._do_destroy)
 	def _do_destroy(self):
 		self.root.destroy()
-		
+	def copy_to_clipboard(self, data: bytes) -> None:
+		self.root.clipboard_clear()
+		self.root.clipboard_append(data.decode())
+		self.root.update()
+	def paste_from_clipboard(self) -> bytes:
+		return self.root.clipboard_get().encode()
 
 
 class ModalWindow:

@@ -87,6 +87,11 @@ class Ui:
 		raise NotImplementedError()
 	def destroy(self) -> None:
 		raise NotImplementedError()
+	def copy_to_clipboard(self, data: bytes) -> None:
+		raise NotImplementedError()
+	def paste_from_clipboard(self) -> bytes:
+		raise NotImplementedError()
+
 
 class Selector:
 	title = Propty(str)
