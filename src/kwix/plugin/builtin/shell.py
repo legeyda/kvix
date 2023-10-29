@@ -14,6 +14,7 @@ default_action_title_description = ' '.join(default_action_title_text.values())
 
 class Action(BaseAction):
 	def _run(self) -> None:
+		self.action_type.context.ui.hide()
 		env = os.environ.copy()
 		env['KWIX_CLIPBOARD'] = ''
 		clipboard_bytes = b''

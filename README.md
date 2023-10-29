@@ -58,10 +58,11 @@ If errors, the following can be helpful.
 	save selectors between activations
 	ctrl+home & ctrl+end
 	restart action
+	rename kwix.Selector.go to activate
 	rename kwix.Ui.destroy to stop?
 	rename kwix.ui.Selector.go to show
 	--collect-data TKinterModernThemes
 	if activation event fired when window already on screen, activate it and bring to foreground
 	fix freeze when interrupt signal received (Ctrl+C in shell)
-	on windows disable command line
 	on windows set focus when show window
+	https://stackoverflow.com/questions/22751100/tkinter-main-window-focus

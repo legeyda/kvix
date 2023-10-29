@@ -16,8 +16,10 @@ default_action_title_description = ' '.join(default_action_title_text.values())
 
 class Action(BaseAction):
 	def _search_google(self, query: str) -> None:
+		self.action_type.context.ui.hide()
 		webbrowser.open('https://www.google.com/search?btnI=1&q=' + urlparse.quote(query))
 	def _search_duck(self, query: str) -> None:
+		self.action_type.context.ui.hide()
 		webbrowser.open('https://duckduckgo.com/?q=' + urlparse.quote('\\ ' + query))
 	def search(self, query: str) -> list[Item]:
 		if not query:

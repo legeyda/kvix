@@ -11,6 +11,7 @@ from kwix import ItemAlt, Item
 from kwix import Item, ItemSource, Conf
 from kwix.impl import EmptyItemSource, BaseSelector, ok_text, cancel_text, BaseUi
 from kwix.l10n import _
+from .util import find_all_children
 
 style_config_item_title_text = _('Theme').setup(ru_RU='Тема')
 
@@ -59,6 +60,13 @@ class Ui(BaseUi):
 		self.root.update()
 	def paste_from_clipboard(self) -> bytes:
 		return self.root.clipboard_get().encode()
+	def hide(self) -> None:
+		def go():
+			for widget in find_all_children(self.root):
+				if 'Toplevel' == widget.winfo_class():
+					cast(uni.Toplevel, widget).withdraw()
+		self._exec_in_mainloop(go)
+
 
 
 class ModalWindow:
@@ -80,11 +88,21 @@ class ModalWindow:
 	def show(self):
 		self.parent._exec_in_mainloop(self._do_show)
 	def _do_show(self):
-		self._do_hide()
+		self._maybe_hide_before_show()
 		self._window.deiconify()
 		self._window.title(self.title) # todo: _tkinter.TclError: bad window path name ".!toplevel"
+		# do our best efforts to bring window to foreground and give it focus
 		self._window.focus_set()
 		self.parent.root.lift()
+		self.parent.root.attributes('-topmost',True)
+		self.parent.root.after_idle(self.parent.root.attributes,'-topmost',False)
+		self.parent.root.focus_force()
+	def _maybe_hide_before_show(self):
+		# there is a dilemma, shoud we hide before show, or not
+		# if we do, we get window blinking on reactivate
+		# if we do not, the window is not brought to foreground if already shown in background		
+		pass #self._do_hide() 
+
 	def hide(self) -> None:
 		self.parent._exec_in_mainloop(self._do_hide)
 	def _do_hide(self) -> None:
@@ -159,8 +177,11 @@ class Selector(ModalWindow, BaseSelector):
 		if item:
 			alts: list[ItemAlt] = item.alts
 			if alt_index >= 0 and alt_index < len(alts):
-				self.hide()
+				self._maybe_hide_on_execute_item_alt()
 				alts[alt_index].execute()
+
+	def _maybe_hide_on_execute_item_alt(self):
+		pass #self.hide() # prefer not to autohide selector, delegate this to actons
 
 	def _get_selected_item(self) -> Item | None:
 		index = self._get_selected_index()
@@ -221,7 +242,7 @@ class Selector(ModalWindow, BaseSelector):
 			for alt in alts:
 				def execute(alt: ItemAlt=alt):
 					popup_menu.destroy()
-					self.hide()						
+					self._maybe_hide_on_execute_item_alt()
 					alt.execute()						
 				popup_menu.add_command(label = str(alt), command = execute)
 			popup_menu.tk_popup(x, y)

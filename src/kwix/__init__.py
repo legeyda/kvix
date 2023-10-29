@@ -91,26 +91,30 @@ class Ui:
 		raise NotImplementedError()
 	def paste_from_clipboard(self) -> bytes:
 		raise NotImplementedError()
+	def hide(self) -> None:
+		'hide and release focus'
+		raise NotImplementedError()
 
 
-class Selector:
-	title = Propty(str)
-	item_source = Propty(ItemSource)
-	def go(self) -> None:
+class Window():
+	title = Propty(str, default_value='kwix')
+	def go(self) -> None: # todo rename to activate
 		raise NotImplementedError()
 	def destroy(self) -> None:
 		raise NotImplementedError()
+
+class Selector(Window):
+	item_source = Propty(ItemSource)
+	def hide(self) -> None:
+		raise NotImplementedError()
 	
-class Dialog:
-	title = Propty(str, default_value='kwix')
+class Dialog(Window):
 	value = Propty()
 	on_ok = Propty(Callable[[], None], default_value=lambda: None)
 	on_cancel = Propty(Callable[[], None], default_value = lambda: None)
-	auto_destroy = Propty(bool, default_value=True)
-	def go(self) -> None:
-		raise NotImplementedError()
-	def destroy(self) -> None:
-		raise NotImplementedError()
+	auto_destroy = Propty(bool, default_value=True) # todo remove?
+
+
 
 class DialogWidget:
 	def get_value(self) -> str:

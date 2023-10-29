@@ -15,16 +15,17 @@ select_text = _('Select').setup(ru_RU='Выбрать', de_DE='Auswählen')
 
 class Action(BaseAction):
 	def _run(self):
-		selector = self.action_type.context.ui.selector()
-		selector.title = str(select_action_type_text)
+		action_type_selector = self.action_type.context.ui.selector()
+		action_type_selector.title = str(select_action_type_text)
 		def execute(action_type: ActionType) -> None:
-			selector.destroy()
 			dialog = self.action_type.context.ui.dialog(action_type.create_editor)
 			dialog.auto_destroy = True
 			def on_ok() -> None:
+				action_type_selector.destroy()
 				if isinstance(dialog.value, kwix.Action):
 					self.action_type.context.action_registry.actions.append(dialog.value)
 					self.action_type.context.action_registry.save()
+				# todo refresh main selector
 			dialog.on_ok = on_ok
 			dialog.go()
 		def search(query: str) -> list[kwix.Item]:
@@ -35,8 +36,8 @@ class Action(BaseAction):
 						result.append(BaseItem(action_type.title, [BaseItemAlt(select_text, lambda: execute(action_type))]))
 				f()
 			return result
-		selector.item_source = FuncItemSource(search)
-		selector.go()
+		action_type_selector.item_source = FuncItemSource(search)
+		action_type_selector.go()
 
 class Plugin(BasePlugin):
 	def _create_single_action_type(self) -> ActionType:

@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import Misc as _TkMisc, Tk as _Tk, Listbox as _TkListbox, Entry as _TkEntry, Button as _TkButton, Scrollbar as _TkScrollbar
 from tkinter.ttk import Style as _TkStyle
 from typing import Any as _Any, cast as _cast, Generator as _Generator
+from .util import find_all_children
 
 from kwix.l10n import _
 
@@ -132,12 +133,8 @@ class BaseStyle:
 		current_theme = self._themes[self._current_theme_name]
 		if not current_theme:
 			return
-		for widget in self.all_children(root):
+		for widget in find_all_children(root):
 			current_theme.configure_widget(widget)
-	def all_children (self, root: _TkMisc) -> _Generator[_TkMisc, _TkMisc, None]:
-		yield root
-		for item in root.winfo_children():
-			yield from self.all_children(item)
 
 
 class Style(BaseStyle, _TkStyle):

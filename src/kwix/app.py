@@ -120,11 +120,14 @@ class App(Context):
 		def edit_action(action: Action) -> None:
 			dialog = action.action_type.context.ui.dialog(action.action_type.create_editor)
 			dialog.value = action
-			dialog.on_ok = lambda: self.action_registry.save()
+			def on_ok():
+				self.action_registry.save()
+			dialog.on_ok = on_ok
 			dialog.go()
 		def delete_action(action: Action) -> None:
 			self.action_registry.actions.remove(action)
 			self.action_registry.save()
+			self.action_selector.go()
 		def search(query: str) -> list[Item]:
 			result: list[Item] = []
 			for action in self.action_registry.actions:

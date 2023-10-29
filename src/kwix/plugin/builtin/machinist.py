@@ -45,10 +45,13 @@ class BaseMachinist(BaseAction):
 	def _get_text(self) -> str:
 		raise NotImplementedError()
 	def _type_text(self):
+		self.action_type.context.ui.hide()
 		pynput.keyboard.Controller().type(self._get_text())
 	def _copy_text(self):
+		self.action_type.context.ui.hide()
 		self.action_type.context.ui.copy_to_clipboard(self._get_text().encode())
 	def _paste_text(self):
+		self.action_type.context.ui.hide()
 		old_clipboard_content = None
 		try:
 			old_clipboard_content = self.action_type.context.ui.paste_from_clipboard()
