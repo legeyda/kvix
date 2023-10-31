@@ -54,12 +54,20 @@ class Ui(BaseUi):
 		self._exec_in_mainloop(self._do_destroy)
 	def _do_destroy(self):
 		self.root.destroy()
-	def copy_to_clipboard(self, data: bytes) -> None:
+	def copy_to_clipboard(self, data: bytes, format_id: str = 'text/plain;charset=utf-8') -> None:
+		self._assert_supported_clipboard_forman_id(format_id)
 		self.root.clipboard_clear()
-		self.root.clipboard_append(data.decode())
+		if data:
+			self.root.clipboard_append(data.decode())
 		self.root.update()
-	def paste_from_clipboard(self) -> bytes:
-		return self.root.clipboard_get().encode()
+	def _assert_supported_clipboard_forman_id(self, format_id: str) -> None:
+		_SUPPORTED_CLIPBOARD_FORMATS = set(['STRING', 'UTF8_STRING', 'TEXT', 'text/plain', 'text/plain;charset=utf-8'])
+		if format_id not in _SUPPORTED_CLIPBOARD_FORMATS:
+			raise Exception('unsupported clipboard format id: ' + format_id)
+	def paste_from_clipboard(self, format_id: str = 'text/plain;charset=utf-8') -> bytes:
+		self._assert_supported_clipboard_forman_id(format_id)
+		result = self.root.clipboard_get()
+		return result.encode() if result else b''
 	def hide(self) -> None:
 		def go():
 			for widget in find_all_children(self.root):
@@ -243,7 +251,7 @@ class Selector(ModalWindow, BaseSelector):
 				def execute(alt: ItemAlt=alt):
 					popup_menu.destroy()
 					self._maybe_hide_on_execute_item_alt()
-					alt.execute()						
+					self.parent.root.after_idle(lambda: alt.execute())
 				popup_menu.add_command(label = str(alt), command = execute)
 			popup_menu.tk_popup(x, y)
 

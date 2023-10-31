@@ -55,9 +55,9 @@ class BaseMachinist(BaseAction):
 		old_clipboard_content = None
 		try:
 			old_clipboard_content = self.action_type.context.ui.paste_from_clipboard()
-		except:
-			pass
-		self._copy_text()
+		except Exception as e:
+			print(e)
+		self.action_type.context.ui.copy_to_clipboard(self._get_text().encode())
 		from pynput.keyboard import Key, Controller
 		keyboard = Controller()
 		keyboard.press(Key.ctrl.value)
