@@ -13,12 +13,12 @@ type_text = _('Type text').setup(ru_RU='Печатать текст', de_DE='Tex
 copy_text = _('Copy to clipboard').setup(ru_RU='Копировать в буфер обмена', de_DE='In die Zwischenablage kopieren')
 paste_text = _('Copy&Paste').setup(ru_RU='Копировать&Вставить', de_DE='In die Zwischenablage kopieren&einfügen')
 
-
+_
 class MachinistActionType(BaseActionType):
 	def __init__(self, context: Context): 
 		BaseActionType.__init__(self, context, 'machinist', 'Machinist')
 	def create_default_action(self, title: str, description: str | None = None, text: str | None = None) -> Action:
-		return Machinist(self, title, description or '', '')
+		return Machinist(self, '', title, description or '')
 	def action_from_config(self, value: Any):
 		self._assert_config_valid(value)
 		return Machinist(self, value['text'], value.get('title'), value.get('description'))

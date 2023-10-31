@@ -67,7 +67,5 @@ If errors, the following can be helpful.
 	on windows set focus when show window
 	https://stackoverflow.com/questions/22751100/tkinter-main-window-focus
 	fix new case action if clipboard is empty
-	fix machinist title&descrption
-
 
 	
