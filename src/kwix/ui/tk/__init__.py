@@ -12,6 +12,7 @@ from kwix import Item, ItemSource, Conf
 from kwix.impl import EmptyItemSource, BaseSelector, ok_text, cancel_text, BaseUi
 from kwix.l10n import _
 from .util import find_all_children
+import pyclip
 
 style_config_item_title_text = _('Theme').setup(ru_RU='Тема')
 
@@ -56,18 +57,26 @@ class Ui(BaseUi):
 		self.root.destroy()
 	def copy_to_clipboard(self, data: bytes, format_id: str = 'text/plain;charset=utf-8') -> None:
 		self._assert_supported_clipboard_forman_id(format_id)
-		self.root.clipboard_clear()
-		if data:
-			self.root.clipboard_append(data.decode())
-		self.root.update()
+		try:
+			pyclip.copy(data.decode() if data else None)
+		except Exception as e:
+			print('error copying to clipboard: ', e)
 	def _assert_supported_clipboard_forman_id(self, format_id: str) -> None:
 		_SUPPORTED_CLIPBOARD_FORMATS = set(['STRING', 'UTF8_STRING', 'TEXT', 'text/plain', 'text/plain;charset=utf-8'])
 		if format_id not in _SUPPORTED_CLIPBOARD_FORMATS:
 			raise Exception('unsupported clipboard format id: ' + format_id)
 	def paste_from_clipboard(self, format_id: str = 'text/plain;charset=utf-8') -> bytes:
 		self._assert_supported_clipboard_forman_id(format_id)
-		result = self.root.clipboard_get()
-		return result.encode() if result else b''
+		try:
+			result = pyclip.paste()
+			if result is None:
+				return result
+			elif isinstance(result, bytes):
+				return cast(bytes, result)
+			else:
+				return str(result).encode()
+		except Exception as e:
+			print('error pasting from clipboard: ', e)
 	def hide(self) -> None:
 		def go():
 			for widget in find_all_children(self.root):

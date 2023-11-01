@@ -10,6 +10,7 @@ dependencies = [
 	"pystray==0.19.4",
 	"pygobject==3.46.0",
 	"pkgconfig==1.5.5",
+	"pyclip==0.7.0",
 	"PyYAML==6.0.1",
 	# tk
 	"tk==0.1.0"
