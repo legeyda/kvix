@@ -18,7 +18,11 @@ main() {
 run_targets() {
 	for target in "$@"; do
 		case "$target" in
-			clean|pyproject|pyinstaller) "run_$target" ;;
+			clean|pyproject|pyinstaller)
+				ORIG_PYTHON=${PYTHON:-}
+				"run_$target" 
+				PYTHON=$ORIG_PYTHON
+				;;
 			PYTHON=*|USE_VENV=*) eval "$target" ;;
 			*) echo "unsupported target '$target'"
 		esac
@@ -36,36 +40,27 @@ run_clean() {
 # env: USE_VENV
 run_pyproject() {
 	echo building pyproject...
-	PYTHON=$(find_python)
-
-	if is_use_venv; then
-		VENV=$(get_venv_dir pyproject)
-		echo "creating python virtual environment in $VENV"
-		"$PYTHON" -m venv "$VENV"
-		PYTHON="$VENV/bin/python3"
-		echo "now using '$PYTHON' as python executable"
-	fi
-
-	"$PYTHON" -m pip install install 'build==1.0.3'
-	"$PYTHON" -m build
+	maybe_create_venv
+	"$(python_exe)" -m pip install install 'build==1.0.3'
+	"$(python_exe)" -m build
 	echo done building pyproject
 }
 
-is_use_venv() {
-	test "true" = "${USE_VENV:-true}" && return 0 || return 1
-}
-
-# fun: get_venv_dir span
-get_venv_dir() {
-	mktemp -d -t "kwix-build-$1.$(date +%Y-%m-%d_%H-%M-%S).XXXX"
-}
-
-create_venv() {
-	"$(find_python)" -m venv "$1"
+# env: target
+#      USE_VENV?
+#      PYTHON? 
+maybe_create_venv() {
+	if [ "true" = "${USE_VENV:-true}" ]; then
+		local path=$(mktemp -d -t "kwix-run-$target.$(date +%Y-%m-%d_%H-%M-%S).XXXX")
+		echo "creating python virtual environment in $path"
+		"$(python_exe)" -m venv "$path"
+		PYTHON="$path/bin/python3"
+		echo "now using '$PYTHON' as python executable"
+	fi
 }
 
 # env: PYTHON
-find_python() {
+python_exe() {
 	if [ -z "${PYTHON:-}" ]; then
 		PYTHON=python3
 	fi
@@ -77,18 +72,9 @@ find_python() {
 # env: python
 run_pyinstaller() {
 	echo 'building pyinstaller...'
-	PYTHON=$(find_python)
-
-	if is_use_venv; then
-		VENV=$(get_venv_dir pyinstaller)
-		echo "creating python virtual environment in $VENV"
-		"$PYTHON" -m venv "$VENV"
-		PYTHON="$VENV/bin/python3"
-		echo "now using '$PYTHON' as python executable"
-	fi
-
-	"$PYTHON" -m pip install 'pyinstaller==6.1.0' 'setuptools-git-versioning==1.13.5' .
-	"$PYTHON" -m PyInstaller pyinstaller.spec
+	maybe_create_venv
+	"$(python_exe)" -m pip install 'pyinstaller==6.1.0' 'setuptools-git-versioning==1.13.5' .
+	"$(python_exe)" -m PyInstaller pyinstaller.spec
 	echo 'done building pyinstaller'
 }
 
