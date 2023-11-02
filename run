@@ -6,19 +6,19 @@ set -eu
 main() {
 	all_args="$@"
 	if [ -n "$all_args" ]; then
-		make_targets "$@"	
+		run_targets "$@"	
 	else
 		echo 'no arguments, assuming pyproject'
-		make_targets pyproject
+		run_targets pyproject
 	fi
 }
 
 # env: PYTHON
 # env: USE_VENV
-make_targets() {
+run_targets() {
 	for target in "$@"; do
 		case "$target" in
-			clean|pyproject|pyinstaller) "make_$target" ;;
+			clean|pyproject|pyinstaller) "run_$target" ;;
 			PYTHON=*|USE_VENV=*) eval "$target" ;;
 			*) echo "unsupported target '$target'"
 		esac
@@ -26,7 +26,7 @@ make_targets() {
 }
 
 
-make_clean() {
+run_clean() {
 	echo 'cleaning project directory...'
 	rm -vrf ./build ./dist *.egg-info src/*.egg-info
 	echo 'done cleaning'
@@ -34,7 +34,7 @@ make_clean() {
 
 # env: PYTHON
 # env: USE_VENV
-make_pyproject() {
+run_pyproject() {
 	echo building pyproject...
 	PYTHON=$(find_python)
 
@@ -75,7 +75,7 @@ find_python() {
 
 # env: use_venv
 # env: python
-make_pyinstaller() {
+run_pyinstaller() {
 	echo 'building pyinstaller...'
 	PYTHON=$(find_python)
 
