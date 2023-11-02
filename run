@@ -32,8 +32,8 @@ run_targets() {
 run_test() {
 	echo testing...
 	maybe_create_venv
-	"$(python_exe)" -m pip install pytest .
-	"$(python_exe)" -m pytest
+	"$(python_exe)" -m pip install pytest pytest-cov .
+	"$(python_exe)" -m pytest --cov=kwix
 	echo done testing
 }
 

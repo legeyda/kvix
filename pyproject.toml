@@ -34,5 +34,14 @@ script = "kwix"
 icon = "src/kwix/logo.jpg"
 output = "dist/kwix.AppImage"
 
-[pytest]
+[tool.pytest]
 testpaths="test"
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.coverage.paths]
+source =["src/kwix/", "*/site-packages/kwix/"]
