@@ -2,7 +2,7 @@
 set -eu
 
 # env: PYTHON
-# env: USE_VENV
+# env: CREATE_VENV
 main() {
 	all_args="$@"
 	if [ -n "$all_args" ]; then
@@ -14,19 +14,27 @@ main() {
 }
 
 # env: PYTHON
-# env: USE_VENV
+# env: CREATE_VENV
 run_targets() {
 	for target in "$@"; do
 		case "$target" in
-			clean|pyproject|pyinstaller)
+			clean|test|pyproject|pyinstaller)
 				ORIG_PYTHON=${PYTHON:-}
 				"run_$target" 
 				PYTHON=$ORIG_PYTHON
 				;;
-			PYTHON=*|USE_VENV=*) eval "$target" ;;
+			PYTHON=*|CREATE_VENV=*) eval "$target" ;;
 			*) echo "unsupported target '$target'"
 		esac
 	done
+}
+
+run_test() {
+	echo testing...
+	maybe_create_venv
+	"$(python_exe)" -m pip install pytest .
+	"$(python_exe)" -m pytest
+	echo done testing
 }
 
 
@@ -37,7 +45,7 @@ run_clean() {
 }
 
 # env: PYTHON
-# env: USE_VENV
+# env: CREATE_VENV
 run_pyproject() {
 	echo building pyproject...
 	maybe_create_venv
@@ -47,10 +55,10 @@ run_pyproject() {
 }
 
 # env: target
-#      USE_VENV?
+#      CREATE_VENV?
 #      PYTHON? 
 maybe_create_venv() {
-	if [ "true" = "${USE_VENV:-true}" ]; then
+	if [ "true" = "${CREATE_VENV:-true}" ]; then
 		local path=$(mktemp -d -t "kwix-run-$target.$(date +%Y-%m-%d_%H-%M-%S).XXXX")
 		echo "creating python virtual environment in $path"
 		"$(python_exe)" -m venv "$path"
@@ -68,7 +76,7 @@ python_exe() {
 }
 
 
-# env: use_venv
+# env: CREATE_VENV
 # env: python
 run_pyinstaller() {
 	echo 'building pyinstaller...'

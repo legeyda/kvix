@@ -33,3 +33,6 @@ enabled = true
 script = "kwix"
 icon = "src/kwix/logo.jpg"
 output = "dist/kwix.AppImage"
+
+[pytest]
+testpaths="test"
