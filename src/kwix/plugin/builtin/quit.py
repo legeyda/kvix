@@ -3,9 +3,7 @@ from kwix.impl import BaseAction, BaseActionType, BasePlugin
 from kwix.l10n import _
 
 quit_title_text = _("Quit Kwix").setup(ru_RU="Выключить Kwix", de_DE="Kwix ausschalten")
-quit_description = " | ".join(
-    [quit_title_text.default] + list(quit_title_text.l10ns.values())
-)
+quit_description = " | ".join([quit_title_text.default] + list(quit_title_text.l10ns.values()))
 
 
 class QuitAction(BaseAction):
@@ -25,6 +23,8 @@ class Plugin(BasePlugin):
     def get_actions(self) -> list[Action]:
         return [
             QuitAction(
-                self._single_action_type, str(quit_title_text), str(quit_description)
+                self._single_action_type,
+                str(quit_title_text),
+                str(quit_description),
             )
         ]

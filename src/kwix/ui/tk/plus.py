@@ -36,7 +36,10 @@ class Listbox(_TkListbox):
 
 class Menu(tk.Menu):
     def __init__(
-        self, master: tk.Tk | None = None, cnf: dict[str, _Any] = {}, **kw: _Any
+        self,
+        master: tk.Tk | None = None,
+        cnf: dict[str, _Any] = {},
+        **kw: _Any,
     ):
         tk.Menu.__init__(self, master, cnf, **kw)
         _apply_widget_style(self)
@@ -44,7 +47,10 @@ class Menu(tk.Menu):
 
 class Entry(_TkEntry):
     def __init__(
-        self, master: tk.Tk | None = None, cnf: dict[str, _Any] = {}, **kw: _Any
+        self,
+        master: tk.Tk | None = None,
+        cnf: dict[str, _Any] = {},
+        **kw: _Any,
     ):
         _TkEntry.__init__(self, master, cnf, **kw)
         _apply_widget_style(self)
@@ -53,7 +59,8 @@ class Entry(_TkEntry):
     def _init_menu(self):
         self._popup_menu = Menu(self, tearoff=False)
         self._popup_menu.add_command(
-            label=str(copy_text), command=lambda: self.event_generate("<<Copy>>")
+            label=str(copy_text),
+            command=lambda: self.event_generate("<<Copy>>"),
         )
         self._popup_menu.add_command(
             label=str(cut_text), command=lambda: self.event_generate("<<Cut>>")
@@ -61,7 +68,8 @@ class Entry(_TkEntry):
         self._popup_menu.add_command(label=str(del_text), command=self._delete)
         self._popup_menu.add_separator()
         self._popup_menu.add_command(
-            label=str(paste_text), command=lambda: self.event_generate("<<Paste>>")
+            label=str(paste_text),
+            command=lambda: self.event_generate("<<Paste>>"),
         )
         self.bind(
             "<Button-3>",

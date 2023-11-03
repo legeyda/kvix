@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from kwix.conf import Conf
-from kwix.l10n import _
 from kwix.util import Propty
 
 

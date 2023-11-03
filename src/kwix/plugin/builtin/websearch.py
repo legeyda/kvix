@@ -14,9 +14,7 @@ import urllib.parse as urlparse
 
 action_type_title_text = _("Google Search").setup(ru_RU="Поиск в google")
 search_google_text = _('Google for "{query}"').setup(ru_RU='Загуглить "{query}"')
-search_duck_text = _('DuckDuckGo for "{query}"').setup(
-    ru_RU='Найти в DuckDuckGo "{query}"'
-)
+search_duck_text = _('DuckDuckGo for "{query}"').setup(ru_RU='Найти в DuckDuckGo "{query}"')
 
 command_title_text = _("Command").setup(ru_RU="Команда")
 default_action_title_text = action_type_title_text
@@ -26,9 +24,7 @@ default_action_title_description = " ".join(default_action_title_text.values())
 class Action(BaseAction):
     def _search_google(self, query: str) -> None:
         self.action_type.context.ui.hide()
-        webbrowser.open(
-            "https://www.google.com/search?btnI=1&q=" + urlparse.quote(query)
-        )
+        webbrowser.open("https://www.google.com/search?btnI=1&q=" + urlparse.quote(query))
 
     def _search_duck(self, query: str) -> None:
         self.action_type.context.ui.hide()

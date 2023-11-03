@@ -98,9 +98,7 @@ class App(Context):
         self._cache_stor.load()
         self._cache_stor.data = self._cache_stor.data or {}
         cache = ensure_type(self._cache_stor.data, dict)
-        known_action_types_ids = set(
-            ensure_type(cache.get("known_action_type_ids", []), list)
-        )
+        known_action_types_ids = set(ensure_type(cache.get("known_action_type_ids", []), list))
 
         # from plugins load actions which are of unknown action types
         for action in pan_plugin.get_actions():
@@ -134,9 +132,7 @@ class App(Context):
         self.action_selector.title = "Kwix!!!"
 
         def edit_action(action: Action) -> None:
-            dialog = action.action_type.context.ui.dialog(
-                action.action_type.create_editor
-            )
+            dialog = action.action_type.context.ui.dialog(action.action_type.create_editor)
             dialog.value = action
 
             def on_ok():
@@ -201,7 +197,9 @@ class App(Context):
 
     def register_global_hotkeys(self):
         activate_window_hotkey = self.conf.item("activate_window_hotkey").setup(
-            title="Activate Window Hotkey", default="<ctrl>+;", read_mapping=str
+            title="Activate Window Hotkey",
+            default="<ctrl>+;",
+            read_mapping=str,
         )
         pynput.keyboard.GlobalHotKeys(
             {activate_window_hotkey.read(): self.activate_action_selector}

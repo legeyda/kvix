@@ -24,9 +24,7 @@ class Conf:
 
     def scope(self, key: str, title: str | None = None) -> Conf:
         if key in self._items:
-            raise RuntimeError(
-                'cannot create scope "' + key + '": there is item with such key'
-            )
+            raise RuntimeError('cannot create scope "' + key + '": there is item with such key')
         result = self._scopes.get(key)
         if not result:
             result = Scope(self, key, title)
@@ -38,9 +36,7 @@ class Conf:
 
     def item(self, key: str, type: Type[T] = Type[Any]) -> Item[T]:
         if key in self._scopes:
-            raise RuntimeError(
-                'cannot create item "' + key + '": there is scope with such key'
-            )
+            raise RuntimeError('cannot create item "' + key + '": there is scope with such key')
         result = self._items.get(key)
         if not result:
             result = Item(self, key, type)

@@ -9,7 +9,13 @@ import kwix
 import kwix.ui
 from kwix import ItemAlt, Item
 from kwix import Item, ItemSource, Conf
-from kwix.impl import EmptyItemSource, BaseSelector, ok_text, cancel_text, BaseUi
+from kwix.impl import (
+    EmptyItemSource,
+    BaseSelector,
+    ok_text,
+    cancel_text,
+    BaseUi,
+)
 from kwix.l10n import _
 from .util import find_all_children
 import pyclip
@@ -63,9 +69,7 @@ class Ui(BaseUi):
     def _do_destroy(self):
         self.root.destroy()
 
-    def copy_to_clipboard(
-        self, data: bytes, format_id: str = "text/plain;charset=utf-8"
-    ) -> None:
+    def copy_to_clipboard(self, data: bytes, format_id: str = "text/plain;charset=utf-8") -> None:
         self._assert_supported_clipboard_forman_id(format_id)
         try:
             pyclip.copy(data.decode() if data else None)
@@ -74,14 +78,18 @@ class Ui(BaseUi):
 
     def _assert_supported_clipboard_forman_id(self, format_id: str) -> None:
         _SUPPORTED_CLIPBOARD_FORMATS = set(
-            ["STRING", "UTF8_STRING", "TEXT", "text/plain", "text/plain;charset=utf-8"]
+            [
+                "STRING",
+                "UTF8_STRING",
+                "TEXT",
+                "text/plain",
+                "text/plain;charset=utf-8",
+            ]
         )
         if format_id not in _SUPPORTED_CLIPBOARD_FORMATS:
             raise Exception("unsupported clipboard format id: " + format_id)
 
-    def paste_from_clipboard(
-        self, format_id: str = "text/plain;charset=utf-8"
-    ) -> bytes:
+    def paste_from_clipboard(self, format_id: str = "text/plain;charset=utf-8") -> bytes:
         self._assert_supported_clipboard_forman_id(format_id)
         try:
             result = pyclip.paste()
@@ -172,9 +180,7 @@ class Selector(ModalWindow, BaseSelector):
 
     def _init_window(self):
         self._window.bind("<Return>", cast(Any, lambda x: self._on_enter(0)))
-        self._window.bind(
-            "<Alt-KeyPress-Return>", cast(Any, lambda x: self._on_enter(1))
-        )
+        self._window.bind("<Alt-KeyPress-Return>", cast(Any, lambda x: self._on_enter(1)))
         for key in ["<Menu>", "Shift-F10"]:  # menu key: name=menu, value=65383
             self._window.bind(key, lambda x: self._on_popup_key_press())
 
@@ -308,12 +314,8 @@ class Selector(ModalWindow, BaseSelector):
 
             selected_index: int | None = self._get_selected_index()
             if isinstance(selected_index, int):
-                coords: tuple[int, int, int, int] = self._result_listbox.bbox(
-                    selected_index
-                )
-                y: int = int(
-                    self._result_listbox.winfo_rooty() + (coords[1] + coords[3] / 2)
-                )
+                coords: tuple[int, int, int, int] = self._result_listbox.bbox(selected_index)
+                y: int = int(self._result_listbox.winfo_rooty() + (coords[1] + coords[3] / 2))
             else:
                 y: int = int(
                     (
@@ -328,7 +330,8 @@ class Selector(ModalWindow, BaseSelector):
         self._result_listbox.selection_set(self._result_listbox.nearest(y))
 
     def go(
-        self, on_ok: Callable[[Item, int | None], Sequence[ItemAlt]] = lambda x, y: []
+        self,
+        on_ok: Callable[[Item, int | None], Sequence[ItemAlt]] = lambda x, y: [],
     ):
         self._on_ok = on_ok
         self.show()
@@ -379,9 +382,7 @@ class Dialog(kwix.Dialog, ModalWindow):
         ok_button = uni.Button(control_frame, text=str(ok_text), command=self._ok_click)
         ok_button.grid(column=1, row=0, padx=4)
 
-        cancel_button = uni.Button(
-            control_frame, text=str(cancel_text), command=self.hide
-        )
+        cancel_button = uni.Button(control_frame, text=str(cancel_text), command=self.hide)
         cancel_button.grid(column=2, row=0, padx=4)
 
     def _ok_click(self, *args):
@@ -425,9 +426,7 @@ class DialogEntry(kwix.DialogEntry):
         self._string_var.set(value)
 
     def on_change(self, func: callable):
-        self._string_var.trace_add(
-            "write", lambda *args, **kwargs: func(self._string_var.get())
-        )
+        self._string_var.trace_add("write", lambda *args, **kwargs: func(self._string_var.get()))
 
 
 class DialogBuilder(kwix.DialogBuilder):

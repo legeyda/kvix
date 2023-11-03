@@ -48,6 +48,28 @@ If errors, the following can be helpful.
 			mingw-w64-x86_64-gobject-introspection mingw-w64-x86_64-libffi
 
 
+## Development
+
+### Visual Studio Code configuration
+
+Use launch configuration `.vscode/launch.json`:
+
+	{
+		"version": "0.2.0",
+		"configurations": [
+			
+			{
+				"name": "debug kwix gui",
+				"type": "python",
+				"request": "launch",
+				"code": "import sys; sys.path.insert(0,'./src'); import kwix.app; kwix.app.main()",
+				"justMyCode": false
+			}
+		]
+	}
+
+
+
 ## todo
 
 	fix paste into selection query entry bug

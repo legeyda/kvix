@@ -17,11 +17,7 @@ class Configurable:
         self._conf = conf
 
     def _scope(self) -> Conf:
-        return (
-            self._conf.scope("kwix")
-            .scope("remote")
-            .setup(title=str(remote_scope_title_text))
-        )
+        return self._conf.scope("kwix").scope("remote").setup(title=str(remote_scope_title_text))
 
     def _host(self) -> str:
         item = (
@@ -123,9 +119,7 @@ class Server(Configurable):
             def _error(self, e: Exception | None = None):
                 if e:
                     print(e)
-                self.response(
-                    500, "Internal server error, see server logs for details."
-                )
+                self.response(500, "Internal server error, see server logs for details.")
 
             def response(self, status: int, msg: str):
                 self.send_response(status)
@@ -133,9 +127,7 @@ class Server(Configurable):
                 self.end_headers()
                 self.wfile.write(b'{"msg":"' + bytes(msg, "UTF-8") + b'"}')
 
-        self._http_server = http.server.HTTPServer(
-            (self._host(), int(self._port())), Handler
-        )
+        self._http_server = http.server.HTTPServer((self._host(), int(self._port())), Handler)
         self._http_server.serve_forever()
 
     def start(self):

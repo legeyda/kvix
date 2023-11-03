@@ -58,6 +58,4 @@ def get_plugin_dir(context: Context):
 
 class Plugin(FromModules):
     def __init__(self, context: Context):
-        FromModules.__init__(
-            self, context, *load_plugin_modules(get_plugin_dir(context))
-        )
+        FromModules.__init__(self, context, *load_plugin_modules(get_plugin_dir(context)))

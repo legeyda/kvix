@@ -10,11 +10,7 @@ class Compound(BasePlugin):
         self.wrap = wrap
 
     def get_action_types(self) -> list[ActionType]:
-        return [
-            action_type
-            for plugin in self.wrap
-            for action_type in plugin.get_action_types()
-        ]
+        return [action_type for plugin in self.wrap for action_type in plugin.get_action_types()]
 
     def get_actions(self) -> list[Action]:
         return [action for plugin in self.wrap for action in plugin.get_actions()]
@@ -22,6 +18,4 @@ class Compound(BasePlugin):
 
 class FromModules(Compound):
     def __init__(self, context: Context, *modules: ModuleType):
-        Compound.__init__(
-            self, context, *[FromModule(context, module) for module in modules]
-        )
+        Compound.__init__(self, context, *[FromModule(context, module) for module in modules])

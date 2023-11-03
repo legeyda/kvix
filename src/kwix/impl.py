@@ -62,7 +62,9 @@ class BaseSelector(kwix.Selector):
     item_source = Propty(kwix.ItemSource, default_supplier=lambda: EmptyItemSource())
 
     def __init__(
-        self, item_source: kwix.ItemSource = EmptyItemSource(), title: str | None = None
+        self,
+        item_source: kwix.ItemSource = EmptyItemSource(),
+        title: str | None = None,
     ):
         self.item_source = item_source
         if title is not None:
@@ -98,9 +100,7 @@ class BaseActionType(ActionType):
     def create_default_action(
         self, title: str, description: str | None = None, **config: Any
     ) -> Action:
-        return cast(ActionFactory, self.action_factory)(
-            self, title, description, **config
-        )
+        return cast(ActionFactory, self.action_factory)(self, title, description, **config)
 
     def action_from_config(self, value: Any) -> Action:
         dic = {**self._assert_config_valid(value)}
@@ -154,8 +154,7 @@ class BaseActionType(ActionType):
                     builder.widget("description").get_value(),
                     **{
                         key: builder.widget(key).get_value()
-                        for key in self.config_entry_texts.keys()
-                        - {"title", "description"}
+                        for key in self.config_entry_texts.keys() - {"title", "description"}
                     },
                 )
             return value

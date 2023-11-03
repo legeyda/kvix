@@ -25,9 +25,14 @@ class CallableWrapper:
             sleep(sleep_seconds)
 
 
+_thread_sentinel = threading.Thread()
+
+
 class ThreadRouter:
-    def __init__(self, target_thread: threading.Thread = threading.current_thread()):
-        self._target_thread = target_thread
+    def __init__(self, target_thread: threading.Thread = _thread_sentinel):
+        self._target_thread = (
+            target_thread if target_thread is not _thread_sentinel else threading.current_thread()
+        )
         self._queue = queue.Queue()
 
     def exec(self, action: Callable[[], None]):
@@ -89,7 +94,10 @@ def get_cache_dir() -> pathlib.Path:
 
 
 key_mappings: list[dict[str, str]] = []
-key_sets: list[str] = ["abcdefghijklmnopqrstuvwxyz", "фисвуапршолдьтщзйкыегмцчня"]
+key_sets: list[str] = [
+    "abcdefghijklmnopqrstuvwxyz",
+    "фисвуапршолдьтщзйкыегмцчня",
+]
 for key_set in key_sets:
     for other_key_set in key_sets:
         if key_sets is other_key_set:
@@ -127,9 +135,11 @@ class Propty(Generic[T]):
     """
     Usage variants:
     x = Propty(str) # just wrapper around self._x
-    x = Propty(dict, default_supplier=lambda: {'a':1}, private_name='_private_x_value', on_change='_on_change_x') # like previous, with additional customizations
+    # like previous, with additional customizations
+    x = Propty(dict, default_supplier=lambda: {'a':1}, private_name='_private_x_value', on_change='_on_change_x')
     x = Propty(str, getter = _get_x, setter = _set_x) # alternative to x = property(fget=_get_x, fset=_set_x)
-    x = Propty(str, getter = '_get_x', setter = '_set_x') # just like previous but supports override of getter and setter in child classes
+    # just like previous but supports override of getter and setter in child classes
+    x = Propty(str, getter = '_get_x', setter = '_set_x')
 
     """
 
@@ -141,14 +151,17 @@ class Propty(Generic[T]):
 
         return result
 
+    _type_type = cast(Type[T], None)
+    _defaut_value_type = cast(T, _sentinel)
+    _default_supplier_type = cast(Callable[[], T], None)
+
     def __init__(
         self,
-        type: Type[T] = cast(Type[T], None),
+        type: Type[T] = _type_type,
         # default value supply
-        default_value: T = cast(T, _sentinel),
-        default_supplier: Callable[[], T] = cast(
-            Callable[[], T], None
-        ),  # type by default
+        default_value: T = _defaut_value_type,
+        # type default constructor by default
+        default_supplier: Callable[[], T] = _default_supplier_type,
         value_predicate: Callable[[T], bool] = lambda x: x and True or False,
         # change notification
         on_change: str | bool | Callable[[Any, T], None] = False,
@@ -270,7 +283,9 @@ TypeValue = TypeVar("TypeValue")
 
 
 def ensure_key(
-    dest: dict[TypeKey, TypeValue], key: TypeKey, supplier: Callable[[], TypeValue]
+    dest: dict[TypeKey, TypeValue],
+    key: TypeKey,
+    supplier: Callable[[], TypeValue],
 ) -> TypeValue:
     if key in dest:
         return dest[key]

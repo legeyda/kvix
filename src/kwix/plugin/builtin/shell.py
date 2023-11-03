@@ -1,6 +1,5 @@
 from kwix import ActionType, Context
 from kwix.impl import BaseAction, BaseActionType, BasePlugin
-from pathlib import Path
 from kwix.l10n import _
 import subprocess
 import chevron
