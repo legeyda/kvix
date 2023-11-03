@@ -19,18 +19,15 @@ class Text:
         self.default = default or self.key
         self.l10ns.update(kwargs)
         return self
-    
+
     def __str__(self) -> str:
         return self[get_current_locale()]
-        
+
     def __getitem__(self, locale: str) -> str:
         return self.l10ns.get(locale, self.default)
-    
+
     def values(self) -> set[str]:
         return set([self.default, *self.l10ns.values()])
-
-
-
 
 
 _texts: dict[str, Text] = {}
@@ -48,7 +45,7 @@ class Scope:
         self._key = key
 
     def gettext(self, key: str) -> Text:
-        return gettext(self._key + '.' + key)
+        return gettext(self._key + "." + key)
 
 
 _scopes: dict[str, Scope] = {}
@@ -60,5 +57,6 @@ def scope(key: str) -> Scope:
 
 def _test():
     from kwix.l10n import _
-    txt = _('Hello').setup(ru_RU='Привет', de_DE='Hallo')
+
+    txt = _("Hello").setup(ru_RU="Привет", de_DE="Hallo")
     print(txt)
