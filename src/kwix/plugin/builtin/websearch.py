@@ -15,27 +15,27 @@ default_action_title_description = ' '.join(default_action_title_text.values())
 
 
 class Action(BaseAction):
-	def _search_google(self, query: str) -> None:
-		self.action_type.context.ui.hide()
-		webbrowser.open('https://www.google.com/search?btnI=1&q=' + urlparse.quote(query))
-	def _search_duck(self, query: str) -> None:
-		self.action_type.context.ui.hide()
-		webbrowser.open('https://duckduckgo.com/?q=' + urlparse.quote('\\ ' + query))
-	def search(self, query: str) -> list[Item]:
-		if not query:
-			return []
-		if 4 > len(query):
-			return []
-		return [
-			BaseItem(str(search_google_text).format(query = query), [BaseItemAlt(str(execute_text), lambda: self._search_google(query))]),
-			BaseItem(str(search_duck_text).format(query = query), [BaseItemAlt(str(execute_text), lambda: self._search_duck(query))])
-		]
-	
+    def _search_google(self, query: str) -> None:
+        self.action_type.context.ui.hide()
+        webbrowser.open('https://www.google.com/search?btnI=1&q=' + urlparse.quote(query))
+    def _search_duck(self, query: str) -> None:
+        self.action_type.context.ui.hide()
+        webbrowser.open('https://duckduckgo.com/?q=' + urlparse.quote('\\ ' + query))
+    def search(self, query: str) -> list[Item]:
+        if not query:
+            return []
+        if 4 > len(query):
+            return []
+        return [
+            BaseItem(str(search_google_text).format(query = query), [BaseItemAlt(str(execute_text), lambda: self._search_google(query))]),
+            BaseItem(str(search_duck_text).format(query = query), [BaseItemAlt(str(execute_text), lambda: self._search_duck(query))])
+        ]
+    
 
 class Plugin(BasePlugin):
-	def __init__(self, context: Context):
-		super().__init__(context)
-	def _create_single_action_type(self) -> ActionType:
-		return BaseActionType(self.context, 'kwix.plugin.builtin.websearch', str(action_type_title_text), Action)
-	def get_actions(self) -> list[Action]:
-		return [Action(self._single_action_type, str(action_type_title_text))]
+    def __init__(self, context: Context):
+        super().__init__(context)
+    def _create_single_action_type(self) -> ActionType:
+        return BaseActionType(self.context, 'kwix.plugin.builtin.websearch', str(action_type_title_text), Action)
+    def get_actions(self) -> list[Action]:
+        return [Action(self._single_action_type, str(action_type_title_text))]

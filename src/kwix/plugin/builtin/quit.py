@@ -8,11 +8,11 @@ quit_description = ' | '.join([quit_title_text.default] + list(quit_title_text.l
 
 
 class QuitAction(BaseAction):
-	def _run(self):
-		self.action_type.context.quit()
+    def _run(self):
+        self.action_type.context.quit()
 
 class Plugin(BasePlugin):
-	def _create_single_action_type(self) -> ActionType:
-		return BaseActionType(self.context, 'kwix.plugin.builtin.quit', str(quit_title_text), action_factory=QuitAction)
-	def get_actions(self) -> list[Action]:
-		return [QuitAction(self._single_action_type, str(quit_title_text), str(quit_description))]
+    def _create_single_action_type(self) -> ActionType:
+        return BaseActionType(self.context, 'kwix.plugin.builtin.quit', str(quit_title_text), action_factory=QuitAction)
+    def get_actions(self) -> list[Action]:
+        return [QuitAction(self._single_action_type, str(quit_title_text), str(quit_description))]
