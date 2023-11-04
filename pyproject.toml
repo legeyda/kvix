@@ -1,7 +1,7 @@
 # https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
 
 [project]
-name = "kwix"
+name = "kvix"
 dynamic = ["version"]
 dependencies = [
 	"chevron==0.14.0",
@@ -17,22 +17,22 @@ dependencies = [
 ]
 
 [project.scripts]
-kwix = "kwix.app:main"
+kvix = "kvix.app:main"
 
 [build-system]
 requires = [ "setuptools>=64", "setuptools-git-versioning==1.13.5", ]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.package-dir]
-kwix = "src/kwix"
+kvix = "src/kvix"
 
 [tool.setuptools-git-versioning]
 enabled = true
 
 [tool.pyproject-appimage]
-script = "kwix"
-icon = "src/kwix/logo.jpg"
-output = "dist/kwix.AppImage"
+script = "kvix"
+icon = "src/kvix/logo.jpg"
+output = "dist/kvix.AppImage"
 
 [tool.pytest]
 testpaths="test"
@@ -44,7 +44,7 @@ branch = true
 show_missing = true
 
 [tool.coverage.paths]
-source =["src/kwix/", "*/site-packages/kwix/"]
+source =["src/kvix/", "*/site-packages/kvix/"]
 
 [tool.black]
 line-length = 99

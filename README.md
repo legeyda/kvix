@@ -1,19 +1,19 @@
-# Kwix
+# kvix
 
-Kwix provides mouseless quick actions for desktop, like Double Shift in Intellij IDEA or ctrl+shift+P in VSCode.
+kvix provides mouseless quick actions for desktop, like Double Shift in Intellij IDEA or ctrl+shift+P in VSCode.
 It can be used to quickly perform frequently used actions which are too numerous to configure hot keys for them.
 
 ## Usage
 
-By default, kwix is configured to activate on `Ctrl+;` hotkey.
-Kwix also runs embedded web-server on default port 23844 and can be activated by `curl -X POST http://127.0.0.1:23844/activate`
+By default, kvix is configured to activate on `Ctrl+;` hotkey.
+kvix also runs embedded web-server on default port 23844 and can be activated by `curl -X POST http://127.0.0.1:23844/activate`
 
 
 
 
 ## Build on Linux
 
-	`cd kwix && sh run pyproject pyinstaller`
+	`cd kvix && sh run pyproject pyinstaller`
 
 ## Build on Windows
 
@@ -24,7 +24,7 @@ The procedure is awfull, sorry for that.
 -	install `pacman -S --noconfirm python mingw-w64-x86_64-python-pip mingw-w64-x86_64-python-gobject mingw-w64-x86_64-python-cairo mingw-w64-x86_64-python-pillow'
 	(when installing pygobject with pacman in msys2, set pygopject version in pyproject.toml equal to actually installed, sorry for that)
 
--	do `cd kwix; CREATE_VENV=false sh run pyinstaller` (this [article](https://snarky.ca/why-you-should-use-python-m-pip/) can be helpfull for understanding)
+-	do `cd kvix; CREATE_VENV=false sh run pyinstaller` (this [article](https://snarky.ca/why-you-should-use-python-m-pip/) can be helpfull for understanding)
 
 
 If errors, the following can be helpful.
@@ -59,10 +59,10 @@ Use launch configuration `.vscode/launch.json`:
 		"configurations": [
 			
 			{
-				"name": "debug kwix gui",
+				"name": "debug kvix gui",
 				"type": "python",
 				"request": "launch",
-				"code": "import sys; sys.path.insert(0,'./src'); import kwix.app; kwix.app.main()",
+				"code": "import sys; sys.path.insert(0,'./src'); import kvix.app; kvix.app.main()",
 				"justMyCode": false
 			}
 		]
@@ -80,15 +80,15 @@ Use launch configuration `.vscode/launch.json`:
 	save selectors between activations
 	ctrl+home & ctrl+end
 	restart action
-	rename kwix.Selector.go to activate
-	rename kwix.Ui.destroy to stop?
-	rename kwix.ui.Selector.go to show
+	rename kvix.Selector.go to activate
+	rename kvix.Ui.destroy to stop?
+	rename kvix.ui.Selector.go to show
 	--collect-data TKinterModernThemes
 	if activation event fired when window already on screen, activate it and bring to foreground
 	fix freeze when interrupt signal received (Ctrl+C in shell)
 	on windows set focus when show window
 	https://stackoverflow.com/questions/22751100/tkinter-main-window-focus
 	fix new case action if clipboard is empty
-	hide kwix after all windows loose focus
+	hide kvix after all windows loose focus
 
 	

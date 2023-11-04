@@ -78,7 +78,7 @@ run_pyproject() {
 maybe_create_venv() {
 	if [ "true" = "${CREATE_VENV:-true}" ]; then
 		local path="build/run/venv/$target"
-		#local path=$(mktemp -d -t "kwix-run-$target.$(date +%Y-%m-%d_%H-%M-%S).XXXX")
+		#local path=$(mktemp -d -t "kvix-run-$target.$(date +%Y-%m-%d_%H-%M-%S).XXXX")
 		mkdir -p "$path"
 		echo "creating python virtual environment in '$path'"
 		"$(get_python_exe)" -m venv "$path"

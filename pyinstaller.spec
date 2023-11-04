@@ -19,9 +19,9 @@ def get_build_arch():
 	return platform.machine().lower()
 
 a = Analysis(
-	['src/kwix/app.py'],
+	['src/kvix/app.py'],
 	pathex=[],
-	binaries=[('src/kwix/logo.jpg', 'kwix')],
+	binaries=[('src/kvix/logo.jpg', 'kvix')],
 	datas=[],
 	hiddenimports=['PIL._tkinter_finder'],
 	hookspath=[],
@@ -42,7 +42,7 @@ exe = EXE(
 	a.binaries,
 	a.datas,
 	[],
-	name='kwix-' + get_project_version() + '-' + get_build_arch() + '-' + get_build_os() + '.exe',
+	name='kvix-' + get_project_version() + '-' + get_build_arch() + '-' + get_build_os() + '.exe',
 	debug=False,
 	bootloader_ignore_signals=False,
 	strip=False,
@@ -55,5 +55,5 @@ exe = EXE(
 	target_arch=None,
 	codesign_identity=None,
 	entitlements_file=None,
-	icon = 'src/kwix/logo.jpg'
+	icon = 'src/kvix/logo.jpg'
 )

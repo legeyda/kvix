@@ -1,4 +1,4 @@
-from kwix.util import Propty
+from kvix.util import Propty
 
 
 def test_x():
