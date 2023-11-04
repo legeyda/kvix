@@ -18,10 +18,9 @@ main() {
 run_targets() {
 	for target in "$@"; do
 		case "$target" in
-			clean|test|pyproject|pyinstaller)
-				ORIG_PYTHON=${PYTHON:-}
-				"run_$target" 
-				PYTHON=$ORIG_PYTHON
+			clean|test|check|pyproject|pyinstaller)
+				"run_$target"
+				reset_python_exe
 				;;
 			PYTHON=*|CREATE_VENV=*) eval "$target" ;;
 			*) echo "unsupported target '$target'"
@@ -29,12 +28,31 @@ run_targets() {
 	done
 }
 
-run_test() {
-	echo testing...
+# env: PYTHON?
+#      CURRENT_PYTHON?
+get_python_exe() {
+	if [ -z "${CURRENT_PYTHON:-}" ]; then
+		CURRENT_PYTHON="${PYTHON:-python3}"
+	fi
+	echo "$CURRENT_PYTHON"
+}
+
+# env: CURRENT_PYTHON?
+set_python_exe() {
+	CURRENT_PYTHON="$1"
+}
+
+# env: CURRENT_PYTHON?
+reset_python_exe() {
+	unset CURRENT_PYTHON
+}
+
+run_check() {
+	echo running all tox environment...
 	maybe_create_venv
-	"$(python_exe)" -m pip install pytest pytest-cov .
-	"$(python_exe)" -m pytest --cov=kwix
-	echo done testing
+	"$(get_python_exe)" -m pip install tox
+	"$(get_python_exe)" -m tox
+	echo done runing tox
 }
 
 
@@ -49,8 +67,8 @@ run_clean() {
 run_pyproject() {
 	echo building pyproject...
 	maybe_create_venv
-	"$(python_exe)" -m pip install install 'build==1.0.3'
-	"$(python_exe)" -m build
+	"$(get_python_exe)" -m pip install install 'build==1.0.3'
+	"$(get_python_exe)" -m build
 	echo done building pyproject
 }
 
@@ -59,30 +77,23 @@ run_pyproject() {
 #      PYTHON? 
 maybe_create_venv() {
 	if [ "true" = "${CREATE_VENV:-true}" ]; then
-		local path=$(mktemp -d -t "kwix-run-$target.$(date +%Y-%m-%d_%H-%M-%S).XXXX")
-		echo "creating python virtual environment in $path"
-		"$(python_exe)" -m venv "$path"
-		PYTHON="$path/bin/python3"
-		echo "now using '$PYTHON' as python executable"
+		local path="build/run/venv/$target"
+		#local path=$(mktemp -d -t "kwix-run-$target.$(date +%Y-%m-%d_%H-%M-%S).XXXX")
+		mkdir -p "$path"
+		echo "creating python virtual environment in '$path'"
+		"$(get_python_exe)" -m venv "$path"
+		set_python_exe "$path/bin/python3"
+		echo "now using '$(get_python_exe)' as python executable"
 	fi
 }
-
-# env: PYTHON
-python_exe() {
-	if [ -z "${PYTHON:-}" ]; then
-		PYTHON=python3
-	fi
-	echo "$PYTHON"
-}
-
 
 # env: CREATE_VENV
 # env: python
 run_pyinstaller() {
 	echo 'building pyinstaller...'
 	maybe_create_venv
-	"$(python_exe)" -m pip install 'pyinstaller==6.1.0' 'setuptools-git-versioning==1.13.5' .
-	"$(python_exe)" -m PyInstaller pyinstaller.spec
+	"$(get_python_exe)" -m pip install 'pyinstaller==6.1.0' 'setuptools-git-versioning==1.13.5' .
+	"$(get_python_exe)" -m PyInstaller pyinstaller.spec
 	echo 'done building pyinstaller'
 }
 
