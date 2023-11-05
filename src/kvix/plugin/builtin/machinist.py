@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Any
 
 import pynput
 
@@ -10,6 +10,7 @@ from kvix.impl import (
     BasePlugin,
     BaseItemAlt,
 )
+import kvix
 from kvix.l10n import _
 from kvix.util import query_match
 
@@ -34,9 +35,9 @@ class MachinistActionType(BaseActionType):
         self,
         title: str,
         description: str | None = None,
-        text: str | None = None,
+        **config: Any,
     ) -> Action:
-        return Machinist(self, "", title, description or "")
+        return Machinist(self, "", title, description or "", **config)
 
     def action_from_config(self, value: Any):
         self._assert_config_valid(value)
@@ -48,7 +49,7 @@ class MachinistActionType(BaseActionType):
 
         def load(value: Any | None):
             if isinstance(value, Machinist):
-                builder.widget("text").set_value(cast(Machinist, value).text)
+                builder.widget("text").set_value(value.text)
 
         builder.on_load(load)
 
@@ -90,16 +91,17 @@ class BaseMachinist(BaseAction):
         from pynput.keyboard import Key, Controller
 
         keyboard = Controller()
-        keyboard.press(Key.ctrl.value)
+        keyboard.press(str(Key.ctrl.value))
         keyboard.press("v")
         keyboard.release("v")
-        keyboard.release(Key.ctrl.value)
-        try:
-            self.action_type.context.ui.copy_to_clipboard(old_clipboard_content)
-        except:
-            pass
+        keyboard.release(str(Key.ctrl.value))
+        if old_clipboard_content is not None:
+            try:
+                self.action_type.context.ui.copy_to_clipboard(old_clipboard_content)
+            except Exception as e:
+                print("error copying to clipboard", e)
 
-    def _create_default_items(self) -> list[BaseItem]:
+    def _create_default_items(self) -> list[kvix.Item]:
         type_alt: ItemAlt = BaseItemAlt(type_text, self._type_text)
         copy_alt: ItemAlt = BaseItemAlt(copy_text, self._copy_text)
         paste_alt: ItemAlt = BaseItemAlt(paste_text, self._paste_text)

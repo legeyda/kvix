@@ -8,7 +8,7 @@ from kvix.impl import (
     execute_text,
 )
 from kvix.l10n import _
-
+import kvix
 import webbrowser
 import urllib.parse as urlparse
 
@@ -59,5 +59,5 @@ class Plugin(BasePlugin):
             Action,
         )
 
-    def get_actions(self) -> list[Action]:
+    def get_actions(self) -> list[kvix.Action]:
         return [Action(self._single_action_type, str(action_type_title_text))]

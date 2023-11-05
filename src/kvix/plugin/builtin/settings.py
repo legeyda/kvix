@@ -2,6 +2,7 @@ from kvix import ActionType, Context, DialogBuilder
 from kvix.impl import BaseAction, BaseActionType, BasePlugin
 from kvix.l10n import _
 from kvix.conf import Conf, Item
+import kvix
 
 action_type_title_text = _("Settings").setup(ru_RU="Настройки", de_DE="Einstellungen")
 default_action_title_text = action_type_title_text
@@ -53,7 +54,7 @@ class Plugin(BasePlugin):
             Action,
         )
 
-    def get_actions(self) -> list[Action]:
+    def get_actions(self) -> list[kvix.Action]:
         return [
             Action(
                 self._single_action_type,

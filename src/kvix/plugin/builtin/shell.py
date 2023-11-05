@@ -22,8 +22,8 @@ class Action(BaseAction):
         try:
             clipboard_bytes = self.action_type.context.ui.paste_from_clipboard()
             env["kvix_CLIPBOARD"] = str(clipboard_bytes.decode("UTF-8"))
-        except:
-            pass
+        except Exception as e:
+            print("error pasting from clipboard", e)
         shell_command = chevron.render(str(self._config["command"]), env)
         shell_args = shlex.split(shell_command)
         subprocess.Popen(shell_args, env=env)

@@ -4,6 +4,11 @@ set -eu
 # env: PYTHON
 # env: CREATE_VENV
 main() {
+	if [ kvix != $(basename $(pwd)) ]; then
+		echo not inside kvix
+		return 1
+	fi
+
 	all_args="$@"
 	if [ -n "$all_args" ]; then
 		run_targets "$@"	
@@ -18,7 +23,7 @@ main() {
 run_targets() {
 	for target in "$@"; do
 		case "$target" in
-			clean|check|pyproject|pyinstaller|publish)
+			vscode|clean|check|pyproject|pyinstaller|publish)
 				"run_$target"
 				reset_python_exe
 				;;
@@ -47,12 +52,14 @@ reset_python_exe() {
 	unset CURRENT_PYTHON
 }
 
-run_check() {
-	echo running all tox environment...
-	maybe_create_venv
-	"$(get_python_exe)" -m pip install tox
-	"$(get_python_exe)" -m tox
-	echo done runing tox
+run_vscode() {
+	echo 'configuring vscode...'
+	mkdir -p .vscode/venv
+	python -m venv .vscode/venv
+	.vscode/venv/bin/python -m pip install . tox types-pkg-resources types-pynput types-PyYAML
+	code .
+	# todo PS1="(kvix/.vscode/venv) ${PS1:-}"
+	echo 'done configuring vscode'
 }
 
 
@@ -60,6 +67,35 @@ run_clean() {
 	echo 'cleaning project directory...'
 	rm -vrf ./build ./dist *.egg-info src/*.egg-info
 	echo 'done cleaning'
+}
+
+run_check() {
+	echo running all tox environment...
+	maybe_create_venv
+	"$(get_python_exe)" -m pip install tox
+	"$(get_python_exe)" -m tox -v
+	echo done runing tox
+}
+
+# env: target
+#      CREATE_VENV?
+#      PYTHON? 
+maybe_create_venv() {
+	if [ "true" = "${CREATE_VENV:-true}" ]; then
+		create_venv
+	fi
+}
+
+# env: target
+#      PYTHON? 
+create_venv() {
+	local path="build/run/venv/${1:-$target}"
+	#local path=$(mktemp -d -t "kvix-run-$target.$(date +%Y-%m-%d_%H-%M-%S).XXXX")
+	mkdir -p "$path"
+	echo "creating python virtual environment in '$path'"
+	"$(get_python_exe)" -m venv "$path"
+	set_python_exe "$path/bin/python3"
+	echo "now using '$(get_python_exe)' as python executable"
 }
 
 # env: PYTHON
@@ -72,20 +108,6 @@ run_pyproject() {
 	echo done building pyproject
 }
 
-# env: target
-#      CREATE_VENV?
-#      PYTHON? 
-maybe_create_venv() {
-	if [ "true" = "${CREATE_VENV:-true}" ]; then
-		local path="build/run/venv/$target"
-		#local path=$(mktemp -d -t "kvix-run-$target.$(date +%Y-%m-%d_%H-%M-%S).XXXX")
-		mkdir -p "$path"
-		echo "creating python virtual environment in '$path'"
-		"$(get_python_exe)" -m venv "$path"
-		set_python_exe "$path/bin/python3"
-		echo "now using '$(get_python_exe)' as python executable"
-	fi
-}
 
 # env: CREATE_VENV
 # env: python

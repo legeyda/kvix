@@ -33,7 +33,7 @@ class ThreadRouter:
         self._target_thread = (
             target_thread if target_thread is not _thread_sentinel else threading.current_thread()
         )
-        self._queue = queue.Queue()
+        self._queue = queue.Queue[Callable[[], None]]()
 
     def exec(self, action: Callable[[], None]):
         if threading.current_thread() == self._target_thread:
@@ -67,6 +67,8 @@ def get_data_dir() -> pathlib.Path:
             return pathlib.Path(appdata, "kvix")
         else:
             return home.joinpath("AppData", "kvix")
+    else:
+        raise RuntimeError("unexpected platform separator derived from HOME")
 
 
 def get_config_dir() -> pathlib.Path:
@@ -79,6 +81,8 @@ def get_config_dir() -> pathlib.Path:
             return pathlib.Path(appdata, "kvix")
         else:
             return home.joinpath("AppData", "roaming", "kvix")
+    else:
+        raise RuntimeError("unexpected platform separator derived from HOME")
 
 
 def get_cache_dir() -> pathlib.Path:
@@ -91,6 +95,8 @@ def get_cache_dir() -> pathlib.Path:
             return pathlib.Path(appdata, "kvix")
         else:
             return home.joinpath("AppData", "kvix")
+    else:
+        raise RuntimeError("unexpected platform separator derived from HOME")
 
 
 key_mappings: list[dict[str, str]] = []
@@ -136,8 +142,10 @@ class Propty(Generic[T]):
     Usage variants:
     x = Propty(str) # just wrapper around self._x
     # like previous, with additional customizations
-    x = Propty(dict, default_supplier=lambda: {'a':1}, private_name='_private_x_value', on_change='_on_change_x')
-    x = Propty(str, getter = _get_x, setter = _set_x) # alternative to x = property(fget=_get_x, fset=_set_x)
+    x = Propty(dict,default_supplier=lambda: {'a':1}, private_name='_private_x_value',
+            on_change='_on_change_x')
+    # alternative to x = property(fget=_get_x, fset=_set_x)
+    x = Propty(str, getter = _get_x, setter = _set_x)
     # just like previous but supports override of getter and setter in child classes
     x = Propty(str, getter = '_get_x', setter = '_set_x')
 
@@ -151,17 +159,17 @@ class Propty(Generic[T]):
 
         return result
 
-    _type_type = cast(Type[T], None)
-    _defaut_value_type = cast(T, _sentinel)
-    _default_supplier_type = cast(Callable[[], T], None)
+    _type_default_value = cast(Type[T], None)
+    _defaut_value_defalt_value = cast(T, _sentinel)
+    _default_supplier_default_value = lambda: cast(T, None)
 
     def __init__(
         self,
-        type: Type[T] = _type_type,
+        type: Type[T] = _type_default_value,
         # default value supply
-        default_value: T = _defaut_value_type,
+        default_value: T = _defaut_value_defalt_value,
         # type default constructor by default
-        default_supplier: Callable[[], T] = _default_supplier_type,
+        default_supplier: Callable[[], T] = _default_supplier_default_value,
         value_predicate: Callable[[T], bool] = lambda x: x and True or False,
         # change notification
         on_change: str | bool | Callable[[Any, T], None] = False,
@@ -181,13 +189,19 @@ class Propty(Generic[T]):
             raise RuntimeError("Propty: not writeable and setter")
         if required and bool(default_supplier):
             raise RuntimeError("Propty: required and default_supplier")
+
         # default value supplier
-        self._default_supplier = (
-            default_supplier
-            or ((lambda: default_value) if default_value is not _sentinel else None)
-            or type
-            or (lambda: None)
-        )
+        def get_default_supplier():
+            if default_supplier != Propty._default_supplier_default_value:
+                return default_supplier
+            if default_value is not _sentinel:
+                return lambda: default_value
+            if type:
+                return type
+            return lambda: None
+
+        self._default_supplier = get_default_supplier()
+
         self._value_predicate = value_predicate
         # change notificate
         self._on_change = on_change
@@ -218,7 +232,7 @@ class Propty(Generic[T]):
         self._maybe_notify_change_listeners(obj, value)
         self._invoke_method(self._setter, obj, value)
 
-    def _assert_type(self, value: T):
+    def _assert_type(self, value: Any):
         if not self._type_check:
             return
         assert self._type
@@ -263,7 +277,7 @@ class Propty(Generic[T]):
             result = self._default_supplier()
             # todo maybe self._assert_type(result)
             self._invoke_method(self._setter, obj, result)
-        return result
+        return cast(T, result)
 
     def _assert_obj(self, obj: Any) -> Any:
         if not obj:

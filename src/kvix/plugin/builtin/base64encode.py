@@ -1,5 +1,6 @@
 import base64
 
+import kvix
 from kvix import ActionType
 from kvix.impl import BaseActionType, BasePlugin
 from kvix.plugin.builtin.machinist import BaseMachinist
@@ -16,5 +17,5 @@ class Plugin(BasePlugin):
             self.context, "base64-encode", "Base64 encode", action_factory=Action
         )
 
-    def get_actions(self) -> list[Action]:
+    def get_actions(self) -> list[kvix.Action]:
         return [Action(self._single_action_type, "Base64 encode", "encode base64")]

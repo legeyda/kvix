@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from kvix.util import Propty
+from kvix.conf import Conf
 
 
 class ItemAlt:
@@ -21,7 +22,7 @@ class ItemSource:
 
 
 class Context:
-    conf = Propty(writeable=False)
+    conf = Propty(Conf, writeable=False)
     ui: Propty[Ui] = Propty(writeable=False)
     action_registry: Propty[ActionRegistry] = Propty(writeable=False)
 

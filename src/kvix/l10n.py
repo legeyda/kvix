@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import locale
-
+from typing import cast
 from kvix.util import ensure_key
 
 
 def get_current_locale() -> str:
-    return locale.getlocale()[0]
+    return cast(str, locale.getlocale()[0])
 
 
 class Text:
