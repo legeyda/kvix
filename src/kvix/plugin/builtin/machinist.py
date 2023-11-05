@@ -1,6 +1,7 @@
 from typing import Any
 
 import pynput
+from typing import cast
 
 from kvix import Action, ActionType, Context, DialogBuilder, ItemAlt
 from kvix.impl import (
@@ -91,10 +92,10 @@ class BaseMachinist(BaseAction):
         from pynput.keyboard import Key, Controller
 
         keyboard = Controller()
-        keyboard.press(str(Key.ctrl.value))
+        keyboard.press(cast(str, Key.ctrl.value))
         keyboard.press("v")
         keyboard.release("v")
-        keyboard.release(str(Key.ctrl.value))
+        keyboard.release(cast(str, Key.ctrl.value))
         if old_clipboard_content is not None:
             try:
                 self.action_type.context.ui.copy_to_clipboard(old_clipboard_content)
