@@ -18,7 +18,7 @@ main() {
 run_targets() {
 	for target in "$@"; do
 		case "$target" in
-			clean|test|check|pyproject|pyinstaller)
+			clean|check|pyproject|pyinstaller|publish)
 				"run_$target"
 				reset_python_exe
 				;;
@@ -95,6 +95,14 @@ run_pyinstaller() {
 	"$(get_python_exe)" -m pip install 'pyinstaller==6.1.0' 'setuptools-git-versioning==1.13.5' .
 	"$(get_python_exe)" -m PyInstaller pyinstaller.spec
 	echo 'done building pyinstaller'
+}
+
+run_publish() {
+	echo 'uploading artifacts to pypi...'
+	maybe_create_venv
+	"$(get_python_exe)" -m pip install twine
+	"$(get_python_exe)" -m twine upload --repository pypi dist/*
+	echo 'done uploading artifacts to pypi'
 }
 
 # entry point
