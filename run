@@ -2,7 +2,7 @@
 set -eu
 
 # env: PYTHON
-# env: CREATE_VENV
+# env: USE_VENV
 main() {
 	if [ kvix != $(basename $(pwd)) ]; then
 		echo not inside kvix
@@ -19,7 +19,7 @@ main() {
 }
 
 # env: PYTHON
-# env: CREATE_VENV
+# env: USE_VENV
 run_targets() {
 	for target in "$@"; do
 		case "$target" in
@@ -27,7 +27,7 @@ run_targets() {
 				"run_$target"
 				reset_python_exe
 				;;
-			PYTHON=*|CREATE_VENV=*) eval "$target" ;;
+			PYTHON=*|USE_VENV=*) eval "$target" ;;
 			*) echo "unsupported target '$target'"
 		esac
 	done
@@ -65,7 +65,9 @@ run_vscode() {
 
 run_clean() {
 	echo 'cleaning project directory...'
-	rm -vrf ./build ./dist *.egg-info src/*.egg-info
+	rm -vrf ./build ./dist *.egg-info src/*.egg-info .tox
+	find . -name '*.pyc' -exec echo rm '{}' ';'
+	find . -type d -empty -print0 | xargs -0 -n1 echo rmdir
 	echo 'done cleaning'
 }
 
@@ -78,10 +80,10 @@ run_check() {
 }
 
 # env: target
-#      CREATE_VENV?
+#      USE_VENV?
 #      PYTHON? 
 maybe_create_venv() {
-	if [ "true" = "${CREATE_VENV:-true}" ]; then
+	if [ "true" = "${USE_VENV:-true}" ]; then
 		create_venv
 	fi
 }
@@ -99,7 +101,7 @@ create_venv() {
 }
 
 # env: PYTHON
-# env: CREATE_VENV
+# env: USE_VENV
 run_pyproject() {
 	echo building pyproject...
 	maybe_create_venv
@@ -109,7 +111,7 @@ run_pyproject() {
 }
 
 
-# env: CREATE_VENV
+# env: USE_VENV
 # env: python
 run_pyinstaller() {
 	echo 'building pyinstaller...'

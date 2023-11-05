@@ -24,7 +24,7 @@ The procedure is awfull, sorry for that.
 -	install `pacman -S --noconfirm python mingw-w64-x86_64-python-pip mingw-w64-x86_64-python-gobject mingw-w64-x86_64-python-cairo mingw-w64-x86_64-python-pillow'
 	(when installing pygobject with pacman in msys2, set pygopject version in pyproject.toml equal to actually installed, sorry for that)
 
--	do `cd kvix; CREATE_VENV=false sh run pyinstaller` (this [article](https://snarky.ca/why-you-should-use-python-m-pip/) can be helpfull for understanding)
+-	do `cd kvix; USE_VENV=false sh run pyinstaller` (this [article](https://snarky.ca/why-you-should-use-python-m-pip/) can be helpfull for understanding)
 
 
 If errors, the following can be helpful.
