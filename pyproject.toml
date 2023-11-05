@@ -15,6 +15,7 @@ dependencies = [
 	# tk
 	"tk==0.1.0"
 ]
+readme = "README.md"
 
 [project.scripts]
 kvix = "kvix.app:main"
