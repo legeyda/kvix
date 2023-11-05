@@ -1,0 +1,27 @@
+name: Build
+on: [push]
+jobs:
+  build_wheels:
+    name: build wheels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v3
+      - name: build
+        run: sh ./run pyproject
+
+  publish:
+    name: publish package to pypi
+    if: startsWith(github.event.ref, 'refs/tags/v')
+    needs:
+      - build_wheels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: ./dist/
+      - uses: pypa/gh-action-pypi-publish@1.5.0
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
