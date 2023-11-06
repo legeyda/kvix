@@ -23,7 +23,22 @@ a = Analysis(
 	pathex=[],
 	binaries=[('src/kvix/logo.jpg', 'kvix')],
 	datas=[],
-	hiddenimports=['PIL._tkinter_finder'],
+	hiddenimports=[
+		'PIL._tkinter_finder',
+
+		'pynput.keyboard._base',
+		'pynput.keyboard._darwin',
+		'pynput.keyboard._dummy',
+		'pynput.keyboard._uinput',
+		'pynput.keyboard._win32',
+		'pynput.keyboard._xorg',
+
+		'pynput.mouse._base',
+		'pynput.mouse._darwin',
+		'pynput.mouse._dummy',
+		'pynput.mouse._win32',
+		'pynput.mouse._xorg',
+	],
 	hookspath=[],
 	hooksconfig={},
 	runtime_hooks=[],
