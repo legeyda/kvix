@@ -49,12 +49,11 @@ jobs:
   # build_pyinstaller_windows:
   #   needs:
   #     - build_wheels
-  #   runs-on: whindows-latest
+  #   runs-on: windows-latest
   #   steps:
   #     - uses: actions/checkout@v4
   #     - uses: actions/setup-python@v3
-  #     #- run: sudo apt install libgirepository1.0-dev
-  #     - run: sh ./run pyinstaller
+  #     - run: sh -c 'USE_VENV=false ./run pyinstaller'
   #     - uses: actions/upload-artifact@v3
   #       with:
   #         name: build_pyinstaller_windows_artifact
