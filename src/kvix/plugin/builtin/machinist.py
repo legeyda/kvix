@@ -102,7 +102,7 @@ class BaseMachinist(BaseAction):
             except Exception as e:
                 print("error copying to clipboard", e)
 
-    def _create_default_items(self) -> list[kvix.Item]:
+    def _create_items(self, query: str) -> list[kvix.Item]:
         type_alt: ItemAlt = BaseItemAlt(type_text, self._type_text)
         copy_alt: ItemAlt = BaseItemAlt(copy_text, self._copy_text)
         paste_alt: ItemAlt = BaseItemAlt(paste_text, self._paste_text)

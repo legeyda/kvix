@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 
 
 import kvix
@@ -22,7 +23,7 @@ select_text = _("Select").setup(ru_RU="Выбрать", de_DE="Auswählen")
 
 
 class Action(BaseAction):
-    def _run(self):
+    def _run(self, query: str) -> None:
         action_type_selector = self.action_type.context.ui.selector()
         action_type_selector.title = str(select_action_type_text)
 

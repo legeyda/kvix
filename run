@@ -56,7 +56,11 @@ run_vscode() {
 	echo 'configuring vscode...'
 	mkdir -p .vscode/venv
 	python -m venv .vscode/venv
-	.vscode/venv/bin/python -m pip install . tox types-pkg-resources types-pynput types-PyYAML
+	.vscode/venv/bin/python -m pip install . tox \
+			types-pkg-resources \
+			types-pynput \
+			types-PyYAML \
+			funcy-stubs==0.1.1
 	code .
 	# todo PS1="(kvix/.vscode/venv) ${PS1:-}"
 	echo 'done configuring vscode'

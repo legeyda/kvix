@@ -1,13 +1,14 @@
 from kvix import Action, ActionType
 from kvix.impl import BaseAction, BaseActionType, BasePlugin
 from kvix.l10n import _
+from typing import Any
 
 quit_title_text = _("Quit kvix").setup(ru_RU="Выключить kvix", de_DE="kvix ausschalten")
 quit_description = " | ".join([quit_title_text.default] + list(quit_title_text.l10ns.values()))
 
 
 class QuitAction(BaseAction):
-    def _run(self):
+    def _run(self, **args: Any):
         self.action_type.context.quit()
 
 

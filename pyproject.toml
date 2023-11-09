@@ -5,7 +5,7 @@ name = "kvix"
 dynamic = ["version"]
 dependencies = [
 	"chevron==0.14.0",
-	"funcy==2.0",
+	"funcy==1.17",
 	"pynput==1.7.6",
 	"pystray==0.19.4",
 	"pygobject==3.46.0",

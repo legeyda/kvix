@@ -5,18 +5,22 @@ from types import ModuleType
 from typing import Any, Callable, Protocol, cast
 
 import funcy
+import re
 
 import kvix
-from kvix import Action, ActionType, Context, Item, Ui
+from kvix import Action, ActionType, Context, Item, ItemAlt, Ui
 from kvix.l10n import _
 from kvix.stor import Stor
-from kvix.util import Propty, query_match
+from kvix.util import Propty, query_match, apply_template
 from kvix.util import ThreadRouter
 
 unnamed_text = _("Unnamed").setup(ru_RU="Без названия", de_DU="Ohne Titel")
 execute_text = _("Execute").setup(ru_RU="Выполнить", de_DU="Ausführen")
 title_text = _("Title").setup(ru_RU="Название", de_DE="Bezeichnung")
 description_text = _("Description").setup(ru_RU="Описание", de_DE="Beschreibung")
+pattern_text = _("Regular expression").setup(
+    ru_RU="Регулярное выражение", de_DE="Regular expression"
+)
 ok_text = _("OK")
 cancel_text = _("Cancel").setup(ru_RU="Отмена", de_DE="Abbrechen")
 
@@ -44,7 +48,7 @@ class BaseItem(kvix.Item, WithTitleStr):
         self._alts = alts
 
 
-class FuncItemSource(kvix.ItemSource):
+class FuncItemSource(kvix.ItemSource):  # todo rename to BaseItemSource
     def __init__(self, func: Callable[[str], list[kvix.Item]]):
         self._func = func
 
@@ -83,6 +87,8 @@ class ActionFactory(Protocol):
 
 
 class BaseActionType(ActionType):
+    BUILTIN_PARAMS = ["title", "description", "pattern"]
+
     def __init__(
         self,
         context: kvix.Context,
@@ -98,20 +104,23 @@ class BaseActionType(ActionType):
         self.config_entry_texts = config_entry_texts
 
     def create_default_action(
-        self, title: str, description: str | None = None, **config: Any
+        self, title: str, description: str | None = None, pattern: str = "", **params: Any
     ) -> Action:
-        return cast(ActionFactory, self.action_factory)(self, title, description, **config)
+        return cast(ActionFactory, self.action_factory)(
+            self, title, description, pattern, **params
+        )
 
     def action_from_config(self, value: Any) -> Action:
         dic = {**self._assert_config_valid(value)}
         return self.create_default_action(
             str(dic["title"]),
             str(dic.get("description", "")),
-            **funcy.omit(dic, ["title", "description"]),
+            str(dic.get("pattern", "")),
+            **funcy.omit(dic, ["action_type"] + BaseActionType.BUILTIN_PARAMS),
         )
 
     def _assert_config_valid(self, value: Any) -> dict[Any, Any]:
-        if type(value) != dict:
+        if not isinstance(value, dict):
             raise RuntimeError("json must be object, " + value + " given")
         value = cast(dict[Any, Any], value)
         if "type" not in value:
@@ -125,6 +134,7 @@ class BaseActionType(ActionType):
     def create_editor(self, builder: kvix.DialogBuilder) -> None:
         builder.create_entry("title", str(title_text))
         builder.create_entry("description", str(description_text))
+        builder.create_entry("pattern", str(pattern_text))
         for key, text in self.config_entry_texts.items():
             builder.create_entry(key, str(text))
 
@@ -132,6 +142,7 @@ class BaseActionType(ActionType):
             if isinstance(value, Action):
                 builder.widget("title").set_value(value.title)
                 builder.widget("description").set_value(value.description)
+                builder.widget("pattern").set_value(value.pattern)
                 for key in self.config_entry_texts:
                     builder.widget(key).set_value(value._config[key])
 
@@ -141,20 +152,23 @@ class BaseActionType(ActionType):
             if isinstance(value, Action):
                 value.title = builder.widget("title").get_value()
                 value.description = builder.widget("description").get_value()
+                value.pattern = builder.widget("pattern").get_value()
                 for key in self.config_entry_texts:
                     value._config[key] = builder.widget(key).get_value()
             elif isinstance(value, dict):
                 value["title"] = builder.widget("title").get_value()
                 value["description"] = builder.widget("description").get_value()
+                value["pattern"] = builder.widget("pattern").get_value()
                 for key in self.config_entry_texts:
                     value[key] = builder.widget(key).get_value()
             elif not value:
                 value = self.create_default_action(
                     builder.widget("title").get_value(),
                     builder.widget("description").get_value(),
+                    builder.widget("pattern").get_value(),
                     **{
                         key: builder.widget(key).get_value()
-                        for key in self.config_entry_texts.keys() - {"title", "description"}
+                        for key in self.config_entry_texts.keys() - BaseActionType.BUILTIN_PARAMS
                     },
                 )
             return value
@@ -167,29 +181,49 @@ class BaseAction(Action):
         self,
         action_type: ActionType,
         title: str,
-        description: str | None = None,
-        **config: Any,
+        description: str | None = None,  # todo make empty string by default
+        pattern: str = "",
+        **params: Any,
     ):
         self._action_type = action_type
         self._title = title
         self._description = description or title
-        self._config = {**config}
+        self._pattern = pattern
+        self._set_params(**params)
+
+    def _set_params(self, **params: Any) -> None:
+        self._config = {**params}  # todo rename to params
+        self._on_after_set_params(**params)
+
+    def _on_after_set_params(self, **params: Any) -> None:
+        pass
+
+    def search(self, query: str) -> list[kvix.Item]:
+        if not self._match(query):
+            return []
+        return self._create_items(query)
 
     def _match(self, query: str) -> bool:
+        if self._pattern:
+            return re.compile(self._pattern).match(query) and True or False
         return query_match(query or "", *self._word_list())
 
     def _word_list(self) -> list[str]:
         return [self.title, self.description, *self._config.values()]
 
-    def _create_default_items(self) -> list[Item]:
-        return [BaseItem(self.title, [BaseItemAlt(execute_text, self._run)])]
+    def _create_items(self, query: str) -> list[Item]:
+        return [self._create_single_item(query)]
 
-    def search(self, query: str) -> list[kvix.Item]:
-        if not self._match(query):
-            return []
-        return self._create_default_items()
+    def _create_single_item(self, query: str) -> Item:
+        return BaseItem(apply_template(self._title, query=query), self._create_item_alts(query))
 
-    def _run(self) -> None:
+    def _create_item_alts(self, query: str) -> list[ItemAlt]:
+        return [self._create_single_item_alt(query)]
+
+    def _create_single_item_alt(self, query: str) -> ItemAlt:
+        return BaseItemAlt(execute_text, lambda: self._run(query))
+
+    def _run(self, query: str) -> None:
         raise NotImplementedError()
 
     def to_config(self) -> dict[str, Any]:
@@ -197,6 +231,7 @@ class BaseAction(Action):
             "type": self.action_type.id,
             "title": self.title,
             "description": self.description,
+            "pattern": self._pattern,
             **self._config,
         }
 
@@ -207,7 +242,7 @@ class BaseActionRegistry(kvix.ActionRegistry):
 
     def load(self):
         self.stor.load()
-        self._actions = []
+        self._actions: list[Action] = []
         for action_config in self.stor.data or []:
             self._actions.append(self.action_from_config(action_config))
 
@@ -221,13 +256,13 @@ class BaseActionRegistry(kvix.ActionRegistry):
         self.action_types[action_type.id] = action_type
 
     def action_from_config(self, value: Any) -> Action:
-        if type(value) != dict:
+        if not isinstance(value, dict):
             raise RuntimeError("dict expected, got " + type(value))
         value = cast(dict[Any, Any], value)
         if "type" not in value:
             raise RuntimeError('"type" expected')
         type_id = value["type"]
-        if type(type_id) != str:
+        if not isinstance(type_id, str):
             raise RuntimeError('"type" expected to be str, got ' + type(type_id))
         if type_id not in self.action_types:
             raise RuntimeError("uknown action type id=" + type_id)

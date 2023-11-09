@@ -4,6 +4,7 @@ from kvix.l10n import _
 import subprocess
 import chevron
 import shlex
+from typing import Any
 
 import os
 
@@ -14,7 +15,7 @@ default_action_title_description = " ".join(default_action_title_text.values())
 
 
 class Action(BaseAction):
-    def _run(self) -> None:
+    def _run(self, **args: Any) -> None:
         self.action_type.context.ui.hide()
         env = os.environ.copy()
         env["kvix_CLIPBOARD"] = ""

@@ -3,6 +3,7 @@ from kvix.impl import BaseAction, BaseActionType, BasePlugin
 from kvix.l10n import _
 from kvix.conf import Conf, Item
 import kvix
+from typing import Any
 
 action_type_title_text = _("Settings").setup(ru_RU="Настройки", de_DE="Einstellungen")
 default_action_title_text = action_type_title_text
@@ -10,7 +11,7 @@ default_action_description = " ".join(default_action_title_text.values())
 
 
 class Action(BaseAction):
-    def _run(self) -> None:
+    def _run(self, **args: Any) -> None:
         def create_entry(builder: DialogBuilder, key: str, item: Item, title: str):
             entry = builder.create_entry(key, title)
             builder.on_load(lambda _: entry.set_value(str(item.read())))

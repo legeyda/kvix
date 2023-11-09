@@ -2,6 +2,7 @@ import logging
 import os
 import pathlib
 import queue
+import chevron
 import threading
 import traceback
 from time import sleep
@@ -318,8 +319,8 @@ def ensure_type(value: Any | None, type_or_tuple: ClassInfo):
     return value
 
 
-def apply_template(template: str, **values: str) -> str:
-    result = str(template)
-    for key, value in values.items():
-        result = result.replace("{{" + str(key) + "}}", str(value))
-    return result
+def apply_template(template: str, value_dict: dict[str, str] = {}, **value_kwargs: str) -> str:
+    values: dict[str, str] = {}
+    values.update(value_dict)
+    values.update(value_kwargs)
+    return chevron.render(template, values)
