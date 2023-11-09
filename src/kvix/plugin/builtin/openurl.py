@@ -32,6 +32,7 @@ class Action(BaseAction):
     #     )
 
     def _run(self, query: str) -> None:
+        self.action_type.context.ui.hide()
         webbrowser.open(apply_template(self._url, {"query": query}))
 
 

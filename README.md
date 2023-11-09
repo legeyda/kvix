@@ -92,4 +92,5 @@ Use launch configuration `.vscode/launch.json`:
 	hide kvix after all windows loose focus
 	separate dialog to select action for editing
 	fix paste if entry has text
+	fix clipboard https://stackoverflow.com/questions/21944895/running-powershell-script-within-python-script-how-to-make-python-print-the-pow
 	
