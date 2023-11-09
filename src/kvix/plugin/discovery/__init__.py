@@ -37,7 +37,7 @@ def load_plugin_modules(root_dir: Path | str) -> list[ModuleType]:
     result = []
     for name, path in scan_python_packages(root_dir):
         try:
-            result.append(load_module_from_path(__name__ + "." + name, path))
+            result.append(load_module_from_path(__name__ + "." + Path(name).stem, path))
         except Exception as e:
             print(e)
     return result

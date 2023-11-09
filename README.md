@@ -91,5 +91,5 @@ Use launch configuration `.vscode/launch.json`:
 	fix new case action if clipboard is empty
 	hide kvix after all windows loose focus
 	separate dialog to select action for editing
-	fix discovered plugin name e.g. 'kvix.plugin.discovery.case.py.CaseAction'
+	fix paste if entry has text
 	
