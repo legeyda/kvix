@@ -10,7 +10,7 @@ import kvix.ui.tk
 import kvix.ui.tray
 from kvix import Action, ActionRegistry, Context, Item
 from kvix.conf import Conf, StorConf
-from kvix.impl import BaseActionRegistry, BaseItem, BaseItemAlt, FuncItemSource
+from kvix.impl import BaseActionRegistry, BaseItem, BaseItemAlt, BaseItemSource
 from kvix.l10n import _
 from kvix.plugin import Plugin as PanPlugin
 from kvix.remote import Client as RemoteClient
@@ -139,12 +139,12 @@ class App(Context):
                 self.action_registry.save()
 
             dialog.on_ok = on_ok
-            dialog.go()
+            dialog.activate()
 
         def delete_action(action: Action) -> None:
             self.action_registry.actions.remove(action)
             self.action_registry.save()
-            self.action_selector.go()
+            self.action_selector.activate()
 
         def search(query: str) -> list[Item]:
             result: list[Item] = []
@@ -182,10 +182,10 @@ class App(Context):
                     result.append(BaseItem(str(item), alts))
             return result
 
-        self.action_selector.item_source = FuncItemSource(search)
+        self.action_selector.item_source = BaseItemSource(search)
 
     def activate_action_selector(self):
-        self.action_selector.go()
+        self.action_selector.activate()
 
     def quit(self):
         self.conf.save()

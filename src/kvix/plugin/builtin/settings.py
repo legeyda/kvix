@@ -40,7 +40,7 @@ class Action(BaseAction):
 
         dialog = self.action_type.context.ui.dialog(create_dialog)
         dialog.on_ok = self.action_type.context.conf.save
-        dialog.go()
+        dialog.activate()
 
 
 class Plugin(BasePlugin):

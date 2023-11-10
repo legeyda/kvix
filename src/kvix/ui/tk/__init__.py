@@ -324,7 +324,7 @@ class Selector(ModalWindow, BaseSelector):
         self._result_listbox.selection_clear(0, uni.END)
         self._result_listbox.selection_set(self._result_listbox.nearest(y))
 
-    def go(
+    def activate(
         self,
         on_ok: Callable[[Item, int | None], Sequence[ItemAlt]] = lambda x, y: [],
     ):
@@ -393,7 +393,7 @@ class Dialog(kvix.Dialog, ModalWindow):
         if self.auto_destroy:
             self.destroy()
 
-    def go(self) -> None:  # todo rename to "show"
+    def activate(self) -> None:  # todo rename to "show"
         self.builder.load(self.value)
         self.show()
 

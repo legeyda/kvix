@@ -35,7 +35,7 @@ class MachinistActionType(BaseActionType):
     def create_default_action(
         self,
         title: str,
-        description: str | None = None,
+        description: str = "",
         **config: Any,
     ) -> Action:
         return Machinist(self, "", title, description or "", **config)
@@ -115,7 +115,7 @@ class Machinist(BaseMachinist):
         action_type: ActionType,
         text: str,
         title: str | None = None,
-        description: str | None = None,
+        description: str = "",
     ):
         title = title or 'type text "' + text + '"'
         BaseAction.__init__(self, action_type, title, description or title)

@@ -10,7 +10,7 @@ from kvix.impl import (
     BaseAction,
     BaseActionType,
     BasePlugin,
-    FuncItemSource,
+    BaseItemSource,
 )
 from kvix.l10n import _
 from kvix.util import query_match
@@ -39,7 +39,7 @@ class Action(BaseAction):
                 # todo refresh main selector
 
             dialog.on_ok = on_ok
-            dialog.go()
+            dialog.activate()
 
         def search(query: str) -> list[kvix.Item]:
             result: list[kvix.Item] = []
@@ -62,8 +62,8 @@ class Action(BaseAction):
                 f()
             return result
 
-        action_type_selector.item_source = FuncItemSource(search)
-        action_type_selector.go()
+        action_type_selector.item_source = BaseItemSource(search)
+        action_type_selector.activate()
 
 
 class Plugin(BasePlugin):

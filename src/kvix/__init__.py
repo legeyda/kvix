@@ -45,7 +45,6 @@ class ActionType:
 class Action:
     action_type = Propty(ActionType)
     title = Propty(str)
-    description = Propty(str)
 
     def search(self, query: str) -> list[Item]:
         raise NotImplementedError()
@@ -104,7 +103,7 @@ class Ui:
 class Window:
     title = Propty(str, default_value="kvix")
 
-    def go(self) -> None:  # todo rename to activate
+    def activate(self) -> None:
         raise NotImplementedError()
 
     def destroy(self) -> None:

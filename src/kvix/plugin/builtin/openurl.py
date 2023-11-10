@@ -25,12 +25,6 @@ class Action(BaseAction):
     def _on_after_set_params(self, **params: Any) -> None:
         self._url = str(params["url"])
 
-    # def _create_single_item(self, query: str) -> Item:
-    #     url = apply_template(self._url, query=query)
-    #     return BaseItem(
-    #         apply_template(str(item_title_text), url=url), self._create_item_alts(query)
-    #     )
-
     def _run(self, query: str) -> None:
         self.action_type.context.ui.hide()
         webbrowser.open(apply_template(self._url, {"query": query}))

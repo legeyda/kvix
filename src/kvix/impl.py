@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from inspect import isclass
 from types import ModuleType
-from typing import Any, Callable, Protocol, cast
+from typing import Any, Callable, Protocol, cast, AnyStr
 
 import funcy
 import re
@@ -48,7 +48,7 @@ class BaseItem(kvix.Item, WithTitleStr):
         self._alts = alts
 
 
-class FuncItemSource(kvix.ItemSource):  # todo rename to BaseItemSource
+class BaseItemSource(kvix.ItemSource):
     def __init__(self, func: Callable[[str], list[kvix.Item]]):
         self._func = func
 
@@ -80,7 +80,7 @@ class ActionFactory(Protocol):
         self,
         action_type: ActionType,
         title: str,
-        description: str | None = None,
+        description: str = "",
         **config: Any,
     ) -> Action:
         ...
@@ -104,7 +104,7 @@ class BaseActionType(ActionType):
         self.config_entry_texts = config_entry_texts
 
     def create_default_action(
-        self, title: str, description: str | None = None, pattern: str = "", **params: Any
+        self, title: str, description: str = "", pattern: str = "", **params: Any
     ) -> Action:
         return cast(ActionFactory, self.action_factory)(
             self, title, description, pattern, **params
@@ -141,8 +141,8 @@ class BaseActionType(ActionType):
         def load(value: Any | None):
             if isinstance(value, Action):
                 builder.widget("title").set_value(value.title)
-                builder.widget("description").set_value(value.description)
-                builder.widget("pattern").set_value(value.pattern)
+                builder.widget("description").set_value(value._description)
+                builder.widget("pattern").set_value(value._pattern)
                 for key in self.config_entry_texts:
                     builder.widget(key).set_value(value._config[key])
 
@@ -151,8 +151,8 @@ class BaseActionType(ActionType):
         def save(value: Any | None) -> Any:
             if isinstance(value, Action):
                 value.title = builder.widget("title").get_value()
-                value.description = builder.widget("description").get_value()
-                value.pattern = builder.widget("pattern").get_value()
+                value._description = builder.widget("description").get_value()
+                value._pattern = builder.widget("pattern").get_value()
                 for key in self.config_entry_texts:
                     value._config[key] = builder.widget(key).get_value()
             elif isinstance(value, dict):
@@ -181,7 +181,7 @@ class BaseAction(Action):
         self,
         action_type: ActionType,
         title: str,
-        description: str | None = None,  # todo make empty string by default
+        description: str = "",  # todo make empty string by default
         pattern: str = "",
         **params: Any,
     ):
@@ -209,7 +209,7 @@ class BaseAction(Action):
         return query_match(query or "", *self._word_list())
 
     def _word_list(self) -> list[str]:
-        return [self.title, self.description, *self._config.values()]
+        return [self.title, self._description, *self._config.values()]
 
     def _create_items(self, query: str) -> list[Item]:
         return [self._create_single_item(query)]
@@ -230,7 +230,7 @@ class BaseAction(Action):
         return {
             "type": self.action_type.id,
             "title": self.title,
-            "description": self.description,
+            "description": self._description,
             "pattern": self._pattern,
             **self._config,
         }
