@@ -2,12 +2,12 @@ import logging
 import os
 import pathlib
 import queue
-import chevron
 import threading
 import traceback
 from time import sleep
 from types import UnionType
 from typing import Any, Callable, Generic, Type, TypeAlias, TypeVar, cast
+import jinja2
 
 
 class CallableWrapper:
@@ -112,21 +112,21 @@ for key_set in key_sets:
         key_mappings.append(dict(zip(list(key_set), list(other_key_set))))
 
 
-def query_match(query: str, *contents: str) -> bool:
+def query_match(query: str, *contents: str) -> str:
     if not query:
-        return True
+        return ""
 
     def normalize(x: str):
         return x.lower().replace("ё", "е")
 
     for word in query.split():
+        word = normalize(word)
         if not word:
             continue
-        word = normalize(word)
         for item in contents:
             if word in normalize(item.lower()):
-                return True
-    return False
+                return word
+    return ""
 
 
 class Sentinel:
@@ -138,7 +138,7 @@ _sentinel = Sentinel()
 T = TypeVar("T")
 
 
-class Propty(Generic[T]):
+class Propty(Generic[T]):  # todo move to separate module
     """
     Usage variants:
     x = Propty(str) # just wrapper around self._x
@@ -323,4 +323,4 @@ def apply_template(template: str, value_dict: dict[str, str] = {}, **value_kwarg
     values: dict[str, str] = {}
     values.update(value_dict)
     values.update(value_kwargs)
-    return chevron.render(template, values)
+    return jinja2.Template(template).render(**values)

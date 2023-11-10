@@ -60,7 +60,8 @@ run_vscode() {
 			types-pkg-resources \
 			types-pynput \
 			types-PyYAML \
-			funcy-stubs==0.1.1
+			funcy-stubs \
+			types-Jinja2
 	code .
 	# todo PS1="(kvix/.vscode/venv) ${PS1:-}"
 	echo 'done configuring vscode'

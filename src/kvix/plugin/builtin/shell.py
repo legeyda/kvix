@@ -2,9 +2,9 @@ from kvix import ActionType, Context
 from kvix.impl import BaseAction, BaseActionType, BasePlugin
 from kvix.l10n import _
 import subprocess
-import chevron
 import shlex
 from typing import Any
+from kvix.util import apply_template
 
 import os
 
@@ -18,14 +18,14 @@ class Action(BaseAction):
     def _run(self, **args: Any) -> None:
         self.action_type.context.ui.hide()
         env = os.environ.copy()
-        env["kvix_CLIPBOARD"] = ""
+        env["KVIX_CLIPBOARD"] = ""
         clipboard_bytes = b""
         try:
             clipboard_bytes = self.action_type.context.ui.paste_from_clipboard()
-            env["kvix_CLIPBOARD"] = str(clipboard_bytes.decode("UTF-8"))
+            env["KVIX_CLIPBOARD"] = str(clipboard_bytes.decode("UTF-8"))
         except Exception as e:
             print("error pasting from clipboard", e)
-        shell_command = chevron.render(str(self._config["command"]), env)
+        shell_command = apply_template(str(self._config["command"]), env)
         shell_args = shlex.split(shell_command)
         subprocess.Popen(shell_args, env=env)
 
