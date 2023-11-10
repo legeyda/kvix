@@ -204,9 +204,11 @@ class BaseAction(Action):
         return self._create_items(query)
 
     def _match(self, query: str) -> bool:
+        if not query:
+            return True
         if self._pattern:
             return re.compile(self._pattern).match(query) and True or False
-        return query_match(query or "", *self._word_list())
+        return query_match(query or "", *self._word_list()) and True or False
 
     def _word_list(self) -> list[str]:
         return [self.title, self._description, *self._config.values()]
