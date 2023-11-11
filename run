@@ -1,55 +1,13 @@
 #!/usr/bin/env sh
 set -eu
 
-# env: PYTHON
-# env: USE_VENV
-main() {
-	if [ kvix != $(basename $(pwd)) ]; then
-		echo not inside kvix
-		return 1
-	fi
-
-	all_args="$@"
-	if [ -n "$all_args" ]; then
-		run_targets "$@"	
-	else
-		echo 'no arguments, assuming pyproject'
-		run_targets pyproject
-	fi
-}
-
-# env: PYTHON
-# env: USE_VENV
-run_targets() {
-	for target in "$@"; do
-		case "$target" in
-			vscode|clean|check|pyproject|pyinstaller|publish)
-				"run_$target"
-				reset_python_exe
-				;;
-			PYTHON=*|USE_VENV=*) eval "$target" ;;
-			*) echo "unsupported target '$target'"
-		esac
-	done
-}
-
 # env: PYTHON?
-#      CURRENT_PYTHON?
-get_python_exe() {
-	if [ -z "${CURRENT_PYTHON:-}" ]; then
-		CURRENT_PYTHON="${PYTHON:-python3}"
-	fi
-	echo "$CURRENT_PYTHON"
-}
-
-# env: CURRENT_PYTHON?
-set_python_exe() {
-	CURRENT_PYTHON="$1"
-}
-
-# env: CURRENT_PYTHON?
-reset_python_exe() {
-	unset CURRENT_PYTHON
+# env: USE_VENV?
+main() {
+	: "${PYTHON:=python3}"
+	for target in "$@"; do
+		"run_$target"
+	done
 }
 
 run_vscode() {
@@ -79,8 +37,8 @@ run_clean() {
 run_check() {
 	echo running all tox environment...
 	maybe_create_venv
-	"$(get_python_exe)" -m pip install tox
-	"$(get_python_exe)" -m tox -v
+	"$PYTHON" -m pip install tox
+	"$PYTHON" -m tox -v
 	echo done runing tox
 }
 
@@ -89,20 +47,14 @@ run_check() {
 #      PYTHON? 
 maybe_create_venv() {
 	if [ "true" = "${USE_VENV:-true}" ]; then
-		create_venv
+		local path="build/run/venv/${1:-$target}"
+		#local path=$(mktemp -d -t "kvix-run-$target.$(date +%Y-%m-%d_%H-%M-%S).XXXX")
+		mkdir -p "$path"
+		echo "creating python virtual environment in '$path'"
+		"$PYTHON" -m venv "$path"
+		PYTHON="$path/bin/python3"
+		echo "now using '$PYTHON' as python executable"
 	fi
-}
-
-# env: target
-#      PYTHON? 
-create_venv() {
-	local path="build/run/venv/${1:-$target}"
-	#local path=$(mktemp -d -t "kvix-run-$target.$(date +%Y-%m-%d_%H-%M-%S).XXXX")
-	mkdir -p "$path"
-	echo "creating python virtual environment in '$path'"
-	"$(get_python_exe)" -m venv "$path"
-	set_python_exe "$path/bin/python3"
-	echo "now using '$(get_python_exe)' as python executable"
 }
 
 # env: PYTHON
@@ -110,29 +62,27 @@ create_venv() {
 run_pyproject() {
 	echo building pyproject...
 	maybe_create_venv
-	"$(get_python_exe)" -m pip install install 'build==1.0.3'
-	"$(get_python_exe)" -m build
+	"$PYTHON" -m pip install install 'build==1.0.3'
+	"$PYTHON" -m build
 	echo done building pyproject
 }
-
 
 # env: USE_VENV
 # env: python
 run_pyinstaller() {
 	echo 'building pyinstaller...'
 	maybe_create_venv
-	"$(get_python_exe)" -m pip install 'pyinstaller==6.1.0' 'setuptools-git-versioning==1.13.5' .
-	"$(get_python_exe)" -m PyInstaller pyinstaller.spec
+	"$PYTHON" -m pip install 'pyinstaller==6.1.0' 'setuptools-git-versioning==1.13.5' .
+	"$PYTHON" -m PyInstaller pyinstaller.spec
 	echo 'done building pyinstaller'
 }
 
 run_publish() {
 	echo 'uploading artifacts to pypi...'
 	maybe_create_venv
-	"$(get_python_exe)" -m pip install twine
-	"$(get_python_exe)" -m twine upload --repository pypi dist/*
+	"$PYTHON" -m pip install twine
+	"$PYTHON" -m twine upload --repository pypi dist/*
 	echo 'done uploading artifacts to pypi'
 }
 
-# entry point
-main "$@"
+main "$@" # entry point

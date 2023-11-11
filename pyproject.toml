@@ -12,7 +12,6 @@ dependencies = [
 	"pyclip==0.7.0",
 	"PyYAML==6.0.1",
 	"Jinja2==3.1.2",
-	# tk
 	"tk==0.1.0"
 ]
 readme = "README.md"
