@@ -81,6 +81,7 @@ class ActionFactory(Protocol):
         action_type: ActionType,
         title: str,
         description: str = "",
+        pattern: str = "",
         **config: Any,
     ) -> Action:
         ...
@@ -107,15 +108,15 @@ class BaseActionType(ActionType):
         self, title: str, description: str = "", pattern: str = "", **params: Any
     ) -> Action:
         return cast(ActionFactory, self.action_factory)(
-            self, title, description, pattern, **params
+            self, title=title, description=description, pattern=pattern, **params
         )
 
     def action_from_config(self, value: Any) -> Action:
         dic = {**self._assert_config_valid(value)}
         return self.create_default_action(
-            str(dic["title"]),
-            str(dic.get("description", "")),
-            str(dic.get("pattern", "")),
+            title=str(dic["title"]),
+            description=str(dic.get("description", "")),
+            pattern=str(dic.get("pattern", "")),
             **funcy.omit(dic, ["action_type"] + BaseActionType.BUILTIN_PARAMS),
         )
 
@@ -181,7 +182,7 @@ class BaseAction(Action):
         self,
         action_type: ActionType,
         title: str,
-        description: str = "",  # todo make empty string by default
+        description: str = "",
         pattern: str = "",
         **params: Any,
     ):
