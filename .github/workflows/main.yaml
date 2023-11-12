@@ -46,25 +46,36 @@ jobs:
           name: build_pyinstaller_linux_artifact
           path: dist/*
 
-  # build_pyinstaller_windows:
-  #   needs:
-  #     - build_wheels
-  #   runs-on: windows-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-python@v3
-  #     - run: sh -c 'USE_VENV=false ./run pyinstaller'
-  #     - uses: actions/upload-artifact@v3
-  #       with:
-  #         name: build_pyinstaller_windows_artifact
-  #         path: dist/*
+  build_pyinstaller_windows:
+    needs:
+      - build_wheels
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+      - name: build script
+        shell: msys2 {0}
+        run: |
+          pacman --noconfirm --sync mingw-w64-x86_64-python mingw-w64-x86_64-python-pip
+          pacman --noconfirm --upgrade \
+            https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-python-gobject-3.46.0-1-any.pkg.tar.zst \
+            https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-python-cairo-1.25.1-1-any.pkg.tar.zst \
+            https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-python-pillow-10.1.0-1-any.pkg.tar.zst
+          sh -c 'USE_VENV=false ./run msys2pyinstaller'
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build_pyinstaller_windows_artifact
+          path: dist/*
 
   publish_release:
     if: startsWith(github.event.ref, 'refs/tags/v')
     needs:
       - build_wheels
       - build_pyinstaller_linux
-      #- build_pyinstaller_windows
+      - build_pyinstaller_windows
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -76,16 +87,16 @@ jobs:
         with:
           name: build_wheels_artifact
           path: ./dist/
-      - name: download pyintaller linux artifact
+      - name: download pyinstaller linux artifact
         uses: actions/download-artifact@v3
         with:
           name: build_pyinstaller_linux_artifact
           path: ./dist/
-      # - name: download pyintaller windows artifact
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     name: build_pyinstaller_windows_artifact
-      #     path: ./dist/
+      - name: download pyinstaller windows artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: build_pyinstaller_windows_artifact
+          path: ./dist/
 
       - run: sudo apt install hub
       - name: upload all artifacts # https://gist.github.com/superbrothers/af84a2f8af394a62352e06537a640746

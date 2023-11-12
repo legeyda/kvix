@@ -77,6 +77,26 @@ run_pyinstaller() {
 	echo 'done building pyinstaller'
 }
 
+run_msys2pyinstaller() {
+	echo 'building msys2 pyinstaller...'
+	maybe_create_venv
+	# these are normal project dependencies
+	"$PYTHON" -m pip install \
+			"funcy==1.17" \
+			"pynput==1.7.6"	\
+			"pystray==0.19.4" \
+			"pkgconfig==1.5.5" \
+			"PyYAML==6.0.1"	\
+			"Jinja2==3.1.2"	\
+			"tk==0.1.0"
+	# this has dependency issue, install with no-deps
+	"$PYTHON" -m pip install --no-deps "pyclip==0.7.0"
+	# build tools
+	"$PYTHON" -m pip install 'pyinstaller==6.1.0' 'setuptools-git-versioning==1.13.5'
+	"$PYTHON" -m PyInstaller pyinstaller.spec
+	echo 'done building msys2 pyinstaller'
+}
+
 run_publish() {
 	echo 'uploading artifacts to pypi...'
 	maybe_create_venv
