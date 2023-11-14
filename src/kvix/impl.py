@@ -224,7 +224,7 @@ class BaseAction(Action):
         return [self._create_single_item_alt(query)]
 
     def _create_single_item_alt(self, query: str) -> ItemAlt:
-        return BaseItemAlt(execute_text, lambda: self._run(query))
+        return BaseItemAlt(execute_text, lambda: self._run(query=query))
 
     def _run(self, query: str) -> None:
         raise NotImplementedError()
