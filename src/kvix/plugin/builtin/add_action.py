@@ -46,7 +46,7 @@ class Action(BaseAction):
             for action_type in self.action_type.context.action_registry.action_types.values():
 
                 def f(action_type: kvix.ActionType = action_type):
-                    if query_match(query, action_type.id, action_type.title):
+                    if not query or query_match(query, action_type.id, action_type.title):
                         result.append(
                             BaseItem(
                                 action_type.title,

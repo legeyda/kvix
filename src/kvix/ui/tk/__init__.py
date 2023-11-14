@@ -15,7 +15,9 @@ from kvix.l10n import _
 
 from .util import find_all_children
 
-style_config_item_title_text = _("Theme").setup(ru_RU="Тема")
+style_config_item_title_text = _('Theme ("dark" or "light")').setup(
+    ru_RU='Тема ("dark" или "light")'
+)
 
 
 def get_logo():
@@ -38,10 +40,19 @@ class Ui(BaseUi):
         self.root.title("kvix!")
         self.root.withdraw()
 
-        # style_conf_item = conf.scope('ui').scope('tk', 'Tk').item('theme').setup(title = str(style_config_item_title_text), default = 'darcula')
-        style = uni.Style(self.root)
-        # style.theme_use(str(style_conf_item.read()))
-        style.theme_use("darcula")
+        style_conf_item = (
+            conf.scope("ui")
+            .scope("tk", "Tk")
+            .item("theme")
+            .setup(
+                title=str(style_config_item_title_text), default="light", on_change=self._set_theme
+            )
+        )
+        self._style = uni.Style(self.root)
+        self._style.theme_use(str(style_conf_item.read()))
+
+    def _set_theme(self, theme_name: str) -> None:
+        self._style.theme_use(theme_name)
 
     def run(self):
         BaseUi.run(self)

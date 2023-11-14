@@ -106,8 +106,7 @@ class Item(Generic[T]):
         default: Any = None,
         read_mapping: Callable[[Any], Any] | None = None,
         enum: Sequence[Any] | None = None,
-        on_change: Callable[[], None] = None,
-        type: Type[T] = Type[Any],
+        on_change: Callable[[Any], None] = lambda value: None,
     ):
         self._title = title
         self._default = default
@@ -127,9 +126,9 @@ class Item(Generic[T]):
 
     def write(self, value: Any):
         data = self.parent._get_data()
-        if self._on_change and (not self.key in data or data[self.key] != value):
-            self._on_change
-        if not self._default or self._default != value:
+        old_value = data.get(self.key, self._default)
+        if old_value != value:
             data[self.key] = value
-        elif self.key in data:
-            del data[self.key]
+            if value == self._default:
+                del data[self.key]
+            self._on_change(value)

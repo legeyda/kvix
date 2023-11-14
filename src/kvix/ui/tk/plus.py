@@ -20,7 +20,7 @@ cut_text = _("Cut").setup(ru_RU="Вырезать", de_DE="Ausschneiden")
 del_text = _("Delete").setup(ru_RU="Удалить", de_DE="Entfernen")
 paste_text = _("Paste").setup(ru_RU="Вставить", de_DE="Einfügen")
 
-_style_singleton: BaseStyle = None
+_style_singleton: BaseStylePlus = None
 
 
 def _apply_widget_style(widget: _TkMisc):
@@ -94,7 +94,7 @@ class Scrollbar(_TkScrollbar):
         _apply_widget_style(self)
 
 
-class Theme:
+class ThemePlus:
     def __init__(
         self,
         frame_back_color: str = "",
@@ -161,24 +161,24 @@ class Theme:
             )
 
 
-class BaseStyle:
+class BaseStylePlus:
     def __init__(self):
         global _style_singleton
         if _style_singleton:
             raise Exception("kvix.ui.tk.plus:Style should be singleton")
         _style_singleton = self
-        self._themes: dict[str, Theme] = {}
+        self._themes: dict[str, ThemePlus] = {}
         self._current_theme_name: str = ""
 
-    def theme_register(self, theme_name: str, theme: Theme) -> None:
+    def theme_plus_register(self, theme_name: str, theme: ThemePlus) -> None:
         if theme_name in self._themes:
             raise Exception("duplicate theme: " + theme_name)
         self._themes[theme_name] = theme
 
-    def theme_use(self, theme_name: str, root_widget: _TkMisc):
+    def theme_plus_use(self, theme_name: str, root_widget: _TkMisc):
         if not theme_name:
             return self._current_theme_name
-        if not theme_name in self._themes:
+        if theme_name not in self._themes:
             return
         self._current_theme_name = theme_name
         self.configure_widgets(root_widget)
@@ -194,14 +194,14 @@ class BaseStyle:
             current_theme.configure_widget(widget)
 
 
-class Style(BaseStyle, _TkStyle):
+class Style(BaseStylePlus, _TkStyle):
     def __init__(self, master: _Tk | None = None):
         _TkStyle.__init__(self, master)
-        BaseStyle.__init__(self)
+        BaseStylePlus.__init__(self)
         self.theme_register(
-            "darcula",
+            "dark",
             "clam",
-            Theme(
+            ThemePlus(
                 frame_back_color="#3c3f41",
                 button_back_color="#333333",
                 edit_back_color="#282829",
@@ -209,14 +209,25 @@ class Style(BaseStyle, _TkStyle):
                 select_back_color="#173a7b",
             ),
         )
+        self.theme_register(
+            "light",
+            "clam",
+            ThemePlus(
+                frame_back_color="#dddddd",
+                button_back_color="#cccccc",
+                edit_back_color="#ffffff",
+                text_color="#000000",
+                select_back_color="#375a9b",
+            ),
+        )
 
-    def theme_register(self, theme_name: str, parent: str | None, theme: Theme):
-        BaseStyle.theme_register(self, theme_name, theme)
+    def theme_register(self, theme_name: str, parent: str | None, theme: ThemePlus) -> None:
+        BaseStylePlus.theme_plus_register(self, theme_name, theme)
         _TkStyle.theme_create(self, theme_name, parent, theme.create_settings())
 
-    def theme_use(self, themename: None = None) -> str | None:
+    def theme_use(self, themename: str | None) -> str | None:
         if themename is None:
             return _TkStyle.theme_use(self)
         _TkStyle.theme_use(self, themename)
         if self.master:
-            BaseStyle.theme_use(self, str(themename), self.master)
+            BaseStylePlus.theme_plus_use(self, str(themename), self.master)
