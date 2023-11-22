@@ -129,11 +129,19 @@ class ModalWindow:
         # self._window.transient(self.parent.root)
         self._window.title(self.title)
         self._window.geometry("500x500")
+        self._center_on_window(500, 500)
         self._window.columnconfigure(0, weight=1)
         self._window.rowconfigure(0, weight=1)
         self._window.bind("<Escape>", lambda _: self._do_hide())
         self._window.protocol("WM_DELETE_WINDOW", lambda: self._do_hide())
         self._window.withdraw()
+
+    def _center_on_window(self, width: int = 500, height: int = 500):
+        screen_width = self._window.winfo_screenwidth()
+        screen_height = self._window.winfo_screenheight()
+        x = (screen_width / 2) - (width / 2)
+        y = (screen_height / 2) - (height / 2)
+        self._window.geometry("%dx%d+%d+%d" % (width, height, x, y))
 
     def show(self):
         self.parent._exec_in_mainloop(self._do_show)
