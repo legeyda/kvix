@@ -8,6 +8,7 @@ from tkinter import (
     Entry as _TkEntry,
     Button as _TkButton,
     Scrollbar as _TkScrollbar,
+    INSERT,
 )
 from tkinter.ttk import Style as _TkStyle
 from typing import Any as _Any, cast as _cast, Generator as _Generator
@@ -55,26 +56,22 @@ class Entry(_TkEntry):
         _TkEntry.__init__(self, master, cnf, **kw)
         _apply_widget_style(self)
         self._init_menu()
+        self.bind("<<Paste>>", lambda _: self._delete())
 
     def _init_menu(self):
         self._popup_menu = Menu(self, tearoff=False)
-        self._popup_menu.add_command(
-            label=str(copy_text),
-            command=lambda: self.event_generate("<<Copy>>"),
-        )
-        self._popup_menu.add_command(
-            label=str(cut_text), command=lambda: self.event_generate("<<Cut>>")
-        )
-        self._popup_menu.add_command(label=str(del_text), command=self._delete)
+        self._add_popup_menu_item(copy_text, lambda: self.event_generate("<<Copy>>"))
+        self._add_popup_menu_item(cut_text, lambda: self.event_generate("<<Cut>>"))
+        self._add_popup_menu_item(del_text, lambda: self._delete())
         self._popup_menu.add_separator()
-        self._popup_menu.add_command(
-            label=str(paste_text),
-            command=lambda: self.event_generate("<<Paste>>"),
-        )
+        self._add_popup_menu_item(paste_text, lambda: self.event_generate("<<Paste>>"))
         self.bind(
             "<Button-3>",
             lambda event: self._popup_menu.tk_popup(event.x_root, event.y_root),
         )
+
+    def _add_popup_menu_item(self, text, command):
+        self._popup_menu.add_command(label=str(text), command=command)
 
     def _delete(self):
         if not self.selection_present():
@@ -135,6 +132,8 @@ class ThemePlus:
             _cast(_TkListbox, widget).configure(
                 background=self.edit_back_color,
                 foreground=self.edit_text_color,
+                selectbackground=self.select_back_color,
+                selectforeground=self.edit_text_color,
                 highlightthickness="0",
             )
         elif "Entry" == widget.winfo_class():
@@ -217,7 +216,7 @@ class Style(BaseStylePlus, _TkStyle):
                 button_back_color="#cccccc",
                 edit_back_color="#ffffff",
                 text_color="#000000",
-                select_back_color="#375a9b",
+                select_back_color="#aaaaff",
             ),
         )
 

@@ -99,4 +99,9 @@ Use launch configuration `.vscode/launch.json`:
 	separate dialog to select action for editing
 	fix paste if entry has text
 	fix clipboard https://stackoverflow.com/questions/21944895/running-powershell-script-within-python-script-how-to-make-python-print-the-pow
-	
+	control systemctl services
+	find local files
+	run desktop files
+	show actions that `query_match(query, action.title)` above those that `query_match(query, action.action_type.title)` above others
+	open two clipboard contents in diff program
+	(list cases to open in action selector)
