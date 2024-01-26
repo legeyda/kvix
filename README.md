@@ -104,4 +104,6 @@ Use launch configuration `.vscode/launch.json`:
 	run desktop files
 	show actions that `query_match(query, action.title)` above those that `query_match(query, action.action_type.title)` above others
 	open two clipboard contents in diff program
+	if top line in selector results selected, arrow up should select bottom line
 	(list cases to open in action selector)
+	Shift+F10 to open context menu of selected element

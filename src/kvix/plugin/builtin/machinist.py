@@ -1,9 +1,9 @@
 from typing import Any
 
 import pynput
-from typing import cast
+from typing import cast, Callable, Sequence
 
-from kvix import Action, ActionType, Context, DialogBuilder, ItemAlt
+from kvix import Action, ActionType, Context, DialogBuilder, Item, ItemAlt
 from kvix.impl import (
     BaseAction,
     BaseActionType,
@@ -70,25 +70,41 @@ class MachinistActionType(BaseActionType):
 
 
 class BaseMachinist(BaseAction):
-    def _get_text(self) -> str:
+    def _create_single_item_alts(self, query: str) -> Sequence[ItemAlt]:
+        return [
+            self._create_single_item_type_alt(lambda: self._get_text(query)),
+            self._create_single_item_copy_alt(lambda: self._get_text(query)),
+            self._create_single_item_paste_alt(lambda: self._get_text(query)),
+        ]
+
+    def _create_single_item_type_alt(self, action: Callable[[], str]) -> ItemAlt:
+        return BaseItemAlt(type_text, lambda: self._type_text(action()))
+
+    def _create_single_item_copy_alt(self, action: Callable[[], str]) -> ItemAlt:
+        return BaseItemAlt(copy_text, lambda: self._copy_text(action()))
+
+    def _create_single_item_paste_alt(self, action: Callable[[], str]) -> ItemAlt:
+        return BaseItemAlt(paste_text, lambda: self._paste_text(action()))
+
+    def _get_text(self, query: str) -> str:
         raise NotImplementedError()
 
-    def _type_text(self):
+    def _type_text(self, text: str):
         self.action_type.context.ui.hide()
-        pynput.keyboard.Controller().type(self._get_text())
+        pynput.keyboard.Controller().type(text)
 
-    def _copy_text(self):
+    def _copy_text(self, text: str):
         self.action_type.context.ui.hide()
-        self.action_type.context.ui.copy_to_clipboard(self._get_text().encode())
+        self.action_type.context.ui.copy_to_clipboard(text.encode())
 
-    def _paste_text(self):
+    def _paste_text(self, text: str):
         self.action_type.context.ui.hide()
         old_clipboard_content = None
         try:
             old_clipboard_content = self.action_type.context.ui.paste_from_clipboard()
         except Exception as e:
             print(e)
-        self.action_type.context.ui.copy_to_clipboard(self._get_text().encode())
+        self.action_type.context.ui.copy_to_clipboard(text.encode())
         from pynput.keyboard import Key, Controller
 
         keyboard = Controller()
@@ -101,12 +117,6 @@ class BaseMachinist(BaseAction):
                 self.action_type.context.ui.copy_to_clipboard(old_clipboard_content)
             except Exception as e:
                 print("error copying to clipboard", e)
-
-    def _create_items(self, query: str) -> list[kvix.Item]:
-        type_alt: ItemAlt = BaseItemAlt(type_text, self._type_text)
-        copy_alt: ItemAlt = BaseItemAlt(copy_text, self._copy_text)
-        paste_alt: ItemAlt = BaseItemAlt(paste_text, self._paste_text)
-        return [BaseItem(self.title, [type_alt, copy_alt, paste_alt])]
 
 
 class Machinist(BaseMachinist):
@@ -121,7 +131,7 @@ class Machinist(BaseMachinist):
         BaseAction.__init__(self, action_type, title, description or title)
         self.text = text
 
-    def _get_text(self) -> str:
+    def _get_text(self, query: str) -> str:
         return self.text
 
     def _match(self, query: str) -> bool:

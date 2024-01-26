@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, Sequence
 
 from kvix.util import Propty
 from kvix.conf import Conf
@@ -17,7 +17,7 @@ class Item:
 
 
 class ItemSource:
-    def search(self, query: str) -> list[Item]:
+    def search(self, query: str) -> Sequence[Item]:
         raise NotImplementedError()
 
 
@@ -46,7 +46,7 @@ class Action:
     action_type = Propty(ActionType)
     title = Propty(str)
 
-    def search(self, query: str) -> list[Item]:
+    def search(self, query: str) -> Sequence[Item]:
         raise NotImplementedError()
 
     def to_config(self) -> dict[str, Any]:
@@ -69,7 +69,7 @@ class ActionRegistry(ItemSource):
     def action_from_config(self, value: Any) -> Action:
         raise NotImplementedError()
 
-    def search(self, query: str) -> list[Item]:
+    def search(self, query: str) -> Sequence[Item]:
         raise NotImplementedError()
 
 
@@ -172,8 +172,8 @@ class Plugin:
     def __init__(self, context: Context):
         ...
 
-    def get_action_types(self) -> list[ActionType]:
+    def get_action_types(self) -> Sequence[ActionType]:
         ...
 
-    def get_actions(self) -> list[Action]:
+    def get_actions(self) -> Sequence[Action]:
         ...

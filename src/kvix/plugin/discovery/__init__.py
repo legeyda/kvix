@@ -3,6 +3,7 @@ import os
 import sys
 from pathlib import Path
 from types import ModuleType
+from typing import Sequence
 
 from kvix.util import get_data_dir
 
@@ -33,7 +34,7 @@ def load_module_from_path(name: str, path: Path | str) -> ModuleType:
     return module
 
 
-def load_plugin_modules(root_dir: Path | str) -> list[ModuleType]:
+def load_plugin_modules(root_dir: Path | str) -> Sequence[ModuleType]:
     result = []
     for name, path in scan_python_packages(root_dir):
         try:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from inspect import isclass
 from types import ModuleType
-from typing import Any, Callable, Protocol, cast, AnyStr
+from typing import Any, Callable, Protocol, cast, Sequence
 
 import funcy
 import re
@@ -14,8 +14,8 @@ from kvix.stor import Stor
 from kvix.util import Propty, query_match, apply_template
 from kvix.util import ThreadRouter
 
-unnamed_text = _("Unnamed").setup(ru_RU="Без названия", de_DU="Ohne Titel")
-execute_text = _("Execute").setup(ru_RU="Выполнить", de_DU="Ausführen")
+unnamed_text = _("Unnamed").setup(ru_RU="Без названия", de_DE="Ohne Titel")
+execute_text = _("Execute").setup(ru_RU="Выполнить", de_DE="Ausführen")
 title_text = _("Title").setup(ru_RU="Название", de_DE="Bezeichnung")
 description_text = _("Description").setup(ru_RU="Описание", de_DE="Beschreibung")
 pattern_text = _("Regular expression").setup(
@@ -52,12 +52,12 @@ class BaseItemSource(kvix.ItemSource):
     def __init__(self, func: Callable[[str], list[kvix.Item]]):
         self._func = func
 
-    def search(self, query: str) -> list[Item]:
+    def search(self, query: str) -> Sequence[Item]:
         return self._func(query)
 
 
 class EmptyItemSource(kvix.ItemSource):
-    def search(self, query: str) -> list[kvix.Item]:
+    def search(self, query: str) -> Sequence[kvix.Item]:
         return []
 
 
@@ -199,7 +199,7 @@ class BaseAction(Action):
     def _on_after_set_params(self, **params: Any) -> None:
         pass
 
-    def search(self, query: str) -> list[kvix.Item]:
+    def search(self, query: str) -> Sequence[kvix.Item]:
         if not self._match(query):
             return []
         return self._create_items(query)
@@ -211,19 +211,22 @@ class BaseAction(Action):
             return re.compile(self._pattern).match(query) and True or False
         return query_match(query or "", *self._word_list()) and True or False
 
-    def _word_list(self) -> list[str]:
+    def _word_list(self) -> Sequence[str]:
         return [self.title, self._description, *self._config.values()]
 
-    def _create_items(self, query: str) -> list[Item]:
-        return [self._create_single_item(query)]
+    def _create_items(self, query: str) -> Sequence[Item]:
+        return (self._create_single_item(query),)
 
     def _create_single_item(self, query: str) -> Item:
-        return BaseItem(apply_template(self._title, query=query), self._create_item_alts(query))
+        return BaseItem(self._get_single_item_title(query), self._create_single_item_alts(query))
 
-    def _create_item_alts(self, query: str) -> list[ItemAlt]:
-        return [self._create_single_item_alt(query)]
+    def _get_single_item_title(self, query: str) -> str:
+        return apply_template(self._title, query=query)
 
-    def _create_single_item_alt(self, query: str) -> ItemAlt:
+    def _create_single_item_alts(self, query: str) -> Sequence[ItemAlt]:
+        return (self._create_single_item_single_alt(query),)
+
+    def _create_single_item_single_alt(self, query: str) -> ItemAlt:
         return BaseItemAlt(execute_text, lambda: self._run(query=query))
 
     def _run(self, query: str) -> None:
@@ -272,7 +275,7 @@ class BaseActionRegistry(kvix.ActionRegistry):
         action_type: ActionType = self.action_types[type_id]
         return action_type.action_from_config(value)
 
-    def search(self, query: str) -> list[kvix.Item]:
+    def search(self, query: str) -> Sequence[kvix.Item]:
         result: list[kvix.Item] = []
         for action in self.actions:
             for item in action.search(query):
@@ -284,14 +287,14 @@ class BasePlugin(kvix.Plugin):
     def __init__(self, context: kvix.Context):
         self.context = context
 
-    def get_action_types(self) -> list[ActionType]:
+    def get_action_types(self) -> Sequence[ActionType]:
         self._single_action_type = self._create_single_action_type()
         return [self._single_action_type]
 
     def _create_single_action_type(self) -> ActionType:
         raise NotImplementedError()
 
-    def get_actions(self) -> list[Action]:
+    def get_actions(self) -> Sequence[Action]:
         return []
 
 
@@ -310,10 +313,10 @@ class FromModule(BasePlugin):
             return None
         return PluginClass(self.context)
 
-    def get_action_types(self) -> list[ActionType]:
+    def get_action_types(self) -> Sequence[ActionType]:
         return self._wrap.get_action_types() if self._wrap else []
 
-    def get_actions(self) -> list[Action]:
+    def get_actions(self) -> Sequence[Action]:
         return self._wrap.get_actions() if self._wrap else []
 
 

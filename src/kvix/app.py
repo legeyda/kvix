@@ -1,7 +1,7 @@
 import sys
 from argparse import ArgumentParser
 from enum import Enum
-from typing import cast
+from typing import cast, Sequence
 
 import pynput
 
@@ -146,7 +146,7 @@ class App(Context):
             self.action_registry.save()
             self.action_selector.activate()
 
-        def search(query: str) -> list[Item]:
+        def search(query: str) -> Sequence[Item]:
             result: list[Item] = []
             for action in self.action_registry.actions:
                 for item in action.search(query):

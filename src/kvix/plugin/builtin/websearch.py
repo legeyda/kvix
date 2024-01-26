@@ -11,6 +11,7 @@ from kvix.l10n import _
 import kvix
 import webbrowser
 import urllib.parse as urlparse
+from typing import Sequence
 
 action_type_title_text = _("Google Search").setup(ru_RU="Поиск в google")
 search_google_text = _('Google for "{query}"').setup(ru_RU='Загуглить "{query}"')
@@ -30,7 +31,7 @@ class Action(BaseAction):
         self.action_type.context.ui.hide()
         webbrowser.open("https://duckduckgo.com/?q=" + urlparse.quote("\\ " + query))
 
-    def search(self, query: str) -> list[Item]:
+    def search(self, query: str) -> Sequence[Item]:
         if not query:
             return []
         if 4 > len(query):
@@ -59,5 +60,5 @@ class Plugin(BasePlugin):
             Action,
         )
 
-    def get_actions(self) -> list[kvix.Action]:
+    def get_actions(self) -> Sequence[kvix.Action]:
         return [Action(self._single_action_type, str(action_type_title_text))]

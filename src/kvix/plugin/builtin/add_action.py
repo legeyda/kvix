@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any
+from typing import Sequence
 
 
 import kvix
@@ -41,7 +41,7 @@ class Action(BaseAction):
             dialog.on_ok = on_ok
             dialog.activate()
 
-        def search(query: str) -> list[kvix.Item]:
+        def search(query: str) -> Sequence[kvix.Item]:
             result: list[kvix.Item] = []
             for action_type in self.action_type.context.action_registry.action_types.values():
 
@@ -75,5 +75,5 @@ class Plugin(BasePlugin):
             action_factory=Action,
         )
 
-    def get_actions(self) -> list[Action]:
+    def get_actions(self) -> Sequence[Action]:
         return [Action(self._single_action_type, str(add_action_text) + "...")]
