@@ -36,6 +36,7 @@ class MachinistActionType(BaseActionType):
         self,
         title: str,
         description: str = "",
+        pattern: str = "",
         **config: Any,
     ) -> Action:
         return Machinist(self, "", title, description or "", **config)
