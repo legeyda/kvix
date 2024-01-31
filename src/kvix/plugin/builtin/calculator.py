@@ -43,6 +43,9 @@ class Action(BaseMachinist):
     def _evaluate(self, query: str) -> str:
         math_functions = {key: getattr(math, key) for key in dir(math) if not key.startswith("_")}
         try:
+            # todo work with commas instead of dots as fractional part separator
+            # todo remove spaces between digits
+            # todo remove commas as three digits separator
             return str(eval(query, math_functions, {}))
         except Exception:
             return ""
