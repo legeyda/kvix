@@ -43,7 +43,7 @@ class BaseItemAlt(kvix.ItemAlt, WithTitleStr):
 
 
 class BaseItem(kvix.Item, WithTitleStr):
-    def __init__(self, title: Any, alts: list[kvix.ItemAlt]):
+    def __init__(self, title: Any, alts: Sequence[kvix.ItemAlt]):
         WithTitleStr.__init__(self, title)
         self._alts = alts
 
