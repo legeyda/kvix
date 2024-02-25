@@ -3,15 +3,15 @@ from typing import Any
 import pynput
 from typing import cast, Callable, Sequence
 
-from kvix import Action, ActionType, Context, DialogBuilder, Item, ItemAlt
+from kvix import Action, ActionType, Context, DialogBuilder, ItemAlt
 from kvix.impl import (
     BaseAction,
     BaseActionType,
-    BaseItem,
     BasePlugin,
     BaseItemAlt,
 )
-import kvix
+from kvix.util import apply_template
+
 from kvix.l10n import _
 from kvix.util import query_match
 
@@ -24,8 +24,6 @@ paste_text = _("Copy&Paste").setup(
     ru_RU="Копировать&Вставить",
     de_DE="In die Zwischenablage kopieren&einfügen",
 )
-
-_
 
 
 class MachinistActionType(BaseActionType):
@@ -133,7 +131,7 @@ class Machinist(BaseMachinist):
         self.text = text
 
     def _get_text(self, query: str) -> str:
-        return self.text
+        return apply_template(self.text, {"query": query})
 
     def _match(self, query: str) -> bool:
         if query_match(query, self.text):

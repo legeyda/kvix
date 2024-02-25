@@ -8,6 +8,7 @@ from time import sleep
 from types import UnionType
 from typing import Any, Callable, Generic, Type, TypeAlias, TypeVar, cast
 import jinja2
+import datetime
 
 
 class CallableWrapper:
@@ -320,7 +321,7 @@ def ensure_type(value: Any | None, type_or_tuple: ClassInfo):
 
 
 def apply_template(template: str, value_dict: dict[str, str] = {}, **value_kwargs: str) -> str:
-    values: dict[str, str] = {}
+    values: dict[str, Any] = {"now": datetime.datetime.now(), "today": datetime.datetime.today()}
     values.update(value_dict)
     values.update(value_kwargs)
     return jinja2.Template(template).render(**values)
