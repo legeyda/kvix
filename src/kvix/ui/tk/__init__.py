@@ -1,4 +1,4 @@
-from typing import Any, Callable, Sequence, cast
+from typing import Any, Callable, Sequence, cast, Tuple
 
 import pkg_resources
 import pyclip
@@ -134,6 +134,7 @@ class ModalWindow:
         self._window.rowconfigure(0, weight=1)
         self._window.bind("<Escape>", lambda _: self._do_hide())
         self._window.protocol("WM_DELETE_WINDOW", lambda: self._do_hide())
+        # self._window.bind("<FocusOut>", lambda _: self._do_hide())
         self._window.withdraw()
 
     def _center_on_window(self, width: int = 500, height: int = 500):
@@ -207,9 +208,15 @@ class Selector(ModalWindow, BaseSelector):
         self._search_query.trace_add("write", lambda *_: self._on_query_entry_type())
         self._search_entry = uni.Entry(self._mainframe, textvariable=self._search_query)
         self._search_entry.grid(column=0, row=0, sticky="ew")
-        for key in ("<Up>", "<Down>", "<Control-Home>", "<Control-End>"):
-            # todo bind _window and route to widgets
-            self._search_entry.bind(key, self._on_search_entry_keys)
+
+        self._search_entry.bind("<Up>", lambda _: self._on_search_entry_key_arrow_up())
+        self._search_entry.bind("<Down>", lambda _: self._on_search_entry_key_arrow_down())
+        self._search_entry.bind("<Prior>", lambda _: self._on_search_entry_key_page_up())
+        self._search_entry.bind("<Next>", lambda _: self._on_search_entry_key_page_down())
+        for key in ("<Home>", "<Control-Home>"):
+            self._search_entry.bind(key, lambda _: self._on_search_entry_key_ctrl_home())
+        for key in ("<End>", "<Control-End>"):
+            self._search_entry.bind(key, lambda _: self._on_search_entry_key_ctrl_end())
 
         result_frame = uni.Frame(self._mainframe)
         result_frame.rowconfigure(0, weight=1)
@@ -255,41 +262,51 @@ class Selector(ModalWindow, BaseSelector):
         if isinstance(index, int):
             return self._item_list[index]
 
-    def _get_selected_index(self) -> int | None:
-        selection = self._result_listbox.curselection()
-        if not selection:
-            if len(self._item_list) > 0:
-                return 0
-            return None
-        try:
-            return selection[0]
-        except IndexError:
-            return None
-
-    def _on_search_entry_keys(self, event):
-        if not self._result_listbox.size():
+    def _set_selected_index(self, index: int | None):
+        if 0 == self._result_listbox.size():
             return
-        if not self._result_listbox.curselection():
-            self._result_listbox.selection_set(0)
-        sel: int = self._result_listbox.curselection()[0]
-        newsel: int = sel
-        if "Up" == event.keysym:
-            if sel > 0:
-                newsel = sel - 1
-        elif "Down" == event.keysym:
-            if sel + 1 < self._result_listbox.size():
-                newsel = sel + 1
-        elif "Home" == event.keysym:
-            newsel = 0
-        elif "End" == event.keysym:
-            newsel = self._result_listbox.size() - 1
-        if sel != newsel:
-            sel = min(self._result_listbox.size(), max(0, sel))
-            self._result_listbox.selection_clear(sel)
-            self._result_listbox.selection_set(newsel)
-            self._result_listbox.see(sel - 1)
-            self._result_listbox.see(sel + 1)
-            self._result_listbox.see(sel)
+        selection: Tuple[int, int] | Tuple[int] | Tuple[()] = self._result_listbox.curselection()
+        if selection:
+            self._result_listbox.selection_clear(*selection)
+        if index is not None and index >= 0 and index < self._result_listbox.size():
+            self._result_listbox.selection_set(index)
+            self._result_listbox.see(index)
+
+    def _get_selected_index(self) -> int | None:
+        selection: Tuple[int, int] | Tuple[()] = self._result_listbox.curselection()
+        if not selection:
+            return None
+        return selection[0]
+
+    def _on_search_entry_key_arrow_up(self):
+        self._set_selected_index((self._get_selected_index() or self._result_listbox.size()) - 1)
+
+    def _on_search_entry_key_arrow_down(self):
+        index = self._get_selected_index()
+        if index is not None and index < self._result_listbox.size() - 1:
+            self._set_selected_index(index + 1)
+        else:
+            self._set_selected_index(0)
+
+    def _on_search_entry_key_page_up(self):
+        index = self._get_selected_index()
+        if index is not None:
+            self._set_selected_index(max(index - 10, 0))
+        else:
+            self._set_selected_index(0)
+
+    def _on_search_entry_key_page_down(self):
+        index = self._get_selected_index()
+        if index is not None:
+            self._set_selected_index(min(index + 10, self._result_listbox.size() - 1))
+        else:
+            self._set_selected_index(0)
+
+    def _on_search_entry_key_ctrl_home(self):
+        self._set_selected_index(0)
+
+    def _on_search_entry_key_ctrl_end(self):
+        self._set_selected_index(self._result_listbox.size() - 1)
 
     def _on_list_left_click(self, event):
         self._select_item_at_y_pos(event.y)

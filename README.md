@@ -107,3 +107,4 @@ Use launch configuration `.vscode/launch.json`:
 	if top line in selector results selected, arrow up should select bottom line
 	(list cases to open in action selector)
 	Shift+F10 to open context menu of selected element
+	прятать окно при потере фокуса

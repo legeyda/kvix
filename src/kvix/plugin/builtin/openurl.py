@@ -2,8 +2,7 @@ from kvix import Context, ItemAlt
 from kvix.impl import (
     BaseActionType,
     BasePlugin,
-    BaseItemAlt,
-    execute_text,
+    BaseItemAlt
 )
 from kvix.l10n import _
 import kvix
