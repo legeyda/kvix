@@ -247,12 +247,15 @@ class Selector(ModalWindow, BaseSelector):
         self._window.withdraw()
 
     def _on_enter(self, alt_index: int = -1):
+        if 0 == len(self._item_list):
+            return
         item: Item | None = self._get_selected_item()
-        if item:
-            alts: list[ItemAlt] = item.alts
-            if alt_index >= 0 and alt_index < len(alts):
-                self._maybe_hide_on_execute_item_alt()
-                alts[alt_index].execute()
+        if not item:
+            item = self._item_list[0]
+        alts: list[ItemAlt] = item.alts
+        if alt_index >= 0 and alt_index < len(alts):
+            self._maybe_hide_on_execute_item_alt()
+            alts[alt_index].execute()
 
     def _maybe_hide_on_execute_item_alt(self):
         pass  # self.hide() # prefer not to autohide selector, delegate this to actons

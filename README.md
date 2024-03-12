@@ -108,3 +108,4 @@ Use launch configuration `.vscode/launch.json`:
 	(list cases to open in action selector)
 	Shift+F10 to open context menu of selected element
 	прятать окно при потере фокуса
+	сделать упорядочивание списка результатов в селекторе
