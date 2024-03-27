@@ -381,7 +381,10 @@ class Selector(ModalWindow, BaseSelector):
         self._result_list.set(cast(Any, [str(item) for item in self._item_list]))
         if self._item_list:
             self._result_listbox.select_clear(0, uni.END)
-            self._result_listbox.selection_set(0)
+        # todo to clear or not to clear selection
+        # if self._item_list:
+        #     self._result_listbox.select_clear(0, uni.END)
+        #     self._result_listbox.selection_set(0)
         self._result_listbox.see(0)
 
 
