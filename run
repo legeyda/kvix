@@ -99,6 +99,8 @@ run_msys2pyinstaller() {
 	which git
 	echo 'ls:'
 	ls -la
+	echo 'find:'
+	find .
 	echo 'git describe:'
 	git describe
 	"$PYTHON" -m PyInstaller pyinstaller.spec
