@@ -1,54 +1,7 @@
 name: Build
 on: [push]
 jobs:
-  build_wheels:
-    name: build wheels
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v3
-      # - name: check # todo add checks
-      #   run: sh ./run check
-      - name: build
-        run: sh ./run pyproject
-      - uses: actions/upload-artifact@v3
-        with:
-          name: build_wheels_artifact
-          path: dist/*
-
-  publish_pypi:
-    name: publish package to pypi
-    if: startsWith(github.event.ref, 'refs/tags/v')
-    needs:
-      - build_wheels
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: build_wheels_artifact
-          path: ./dist/
-      - uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-
-  build_pyinstaller_linux:
-    needs:
-      - build_wheels
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v3
-      - run: sudo apt install libgirepository1.0-dev
-      - run: sh ./run pyinstaller
-      - uses: actions/upload-artifact@v3
-        with:
-          name: build_pyinstaller_linux_artifact
-          path: dist/*
-
   build_pyinstaller_windows:
-    needs:
-      - build_wheels
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,8 +26,6 @@ jobs:
   publish_release:
     if: startsWith(github.event.ref, 'refs/tags/v')
     needs:
-      - build_wheels
-      - build_pyinstaller_linux
       - build_pyinstaller_windows
     runs-on: ubuntu-latest
     steps:
@@ -82,16 +33,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: download wheels artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: build_wheels_artifact
-          path: ./dist/
-      - name: download pyinstaller linux artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: build_pyinstaller_linux_artifact
-          path: ./dist/
       - name: download pyinstaller windows artifact
         uses: actions/download-artifact@v3
         with:
