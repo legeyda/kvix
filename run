@@ -97,7 +97,8 @@ run_msys2pyinstaller() {
 	"$PYTHON" -m setuptools_git_versioning
 	echo "git is:"
 	which git
-	echo 'git describe:"
+	echo 'git describe:'
+	git describe
 	"$PYTHON" -m PyInstaller pyinstaller.spec
 	echo 'done building msys2 pyinstaller'
 }
