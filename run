@@ -99,6 +99,8 @@ run_msys2pyinstaller() {
 	which git
 	echo 'git describe:'
 	git describe
+	echo 'ls:'
+	ls -la
 	"$PYTHON" -m PyInstaller pyinstaller.spec
 	echo 'done building msys2 pyinstaller'
 }
