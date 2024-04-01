@@ -5,6 +5,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
       - uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
