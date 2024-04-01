@@ -93,6 +93,10 @@ run_msys2pyinstaller() {
 	"$PYTHON" -m pip install --no-deps "pyclip==0.7.0"
 	# build tools
 	"$PYTHON" -m pip install 'pyinstaller==6.1.0' 'setuptools-git-versioning==1.13.5'
+	echo "version is:"
+	"$PYTHON" -m setuptools_git_versioning
+	echo "git is:"
+	which git
 	"$PYTHON" -m PyInstaller pyinstaller.spec
 	echo 'done building msys2 pyinstaller'
 }
