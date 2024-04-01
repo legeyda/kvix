@@ -59,7 +59,7 @@ jobs:
       - name: build script
         shell: msys2 {0}
         run: |
-          pacman --noconfirm --sync mingw-w64-x86_64-python mingw-w64-x86_64-python-pip
+          pacman --noconfirm --sync git mingw-w64-x86_64-python mingw-w64-x86_64-python-pip
           pacman --noconfirm --upgrade \
             https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-python-gobject-3.46.0-1-any.pkg.tar.zst \
             https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-python-cairo-1.25.1-1-any.pkg.tar.zst \
