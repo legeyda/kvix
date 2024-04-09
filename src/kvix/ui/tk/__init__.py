@@ -338,6 +338,8 @@ class Selector(ModalWindow, BaseSelector):
 
     def _on_popup_key_press(self):
         item: Item | None = self._get_selected_item()
+        if not item and self._item_list:
+            item = self._item_list[0]
         if item:
             x: int = int(
                 (
@@ -346,17 +348,9 @@ class Selector(ModalWindow, BaseSelector):
                 )
             )
 
-            selected_index: int | None = self._get_selected_index()
-            if isinstance(selected_index, int):
-                coords: tuple[int, int, int, int] = self._result_listbox.bbox(selected_index)
-                y: int = int(self._result_listbox.winfo_rooty() + (coords[1] + coords[3] / 2))
-            else:
-                y: int = int(
-                    (
-                        int(self._result_listbox.winfo_rooty())
-                        + int(self._result_listbox.winfo_height()) / 3
-                    )
-                )
+            selected_index: int = self._get_selected_index() or 0
+            coords: tuple[int, int, int, int] = self._result_listbox.bbox(selected_index)
+            y: int = int(self._result_listbox.winfo_rooty() + (coords[1] + coords[3] / 2))
             self._show_popup_menu(item, x, y)
 
     def _select_item_at_y_pos(self, y: int):
