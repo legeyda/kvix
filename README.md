@@ -109,3 +109,5 @@ Use launch configuration `.vscode/launch.json`:
 	Shift+F10 to open context menu of selected element
 	прятать окно при потере фокуса
 	сделать упорядочивание списка результатов в селекторе
+	ctrl+c копирует тексти из машинист-экшна который выделен в текущий момент
+	open link in browswer 

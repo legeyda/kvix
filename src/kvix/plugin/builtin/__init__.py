@@ -12,6 +12,7 @@ from . import (
     quit,
     settings,
     shell,
+    uuid,
     websearch,
 )
 
@@ -31,5 +32,6 @@ class Plugin(FromModules):
             quit,
             settings,
             shell,
+            uuid,
             websearch,
         )
