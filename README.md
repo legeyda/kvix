@@ -13,6 +13,8 @@ kvix also runs embedded web-server on default port 23844 and can be activated by
 
 ## Build on Linux
 
+	sudo apt install libcairo2-dev pkg-config python3-dev libgirepository1.0-dev wl-clipboard
+
 	`cd kvix && sh run pyproject pyinstaller`
 
 ## Build on Windows
@@ -110,4 +112,23 @@ Use launch configuration `.vscode/launch.json`:
 	прятать окно при потере фокуса
 	сделать упорядочивание списка результатов в селекторе
 	ctrl+c копирует тексти из машинист-экшна который выделен в текущий момент
-	open link in browswer 
+	open link in browswer
+	translate words
+
+
+## development
+
+
+Launch configuration (./.vscode/launch.json):
+
+	{
+		"configurations": [
+			{
+				"name": "debug kvix gui",
+				"type": "debugpy",
+				"request": "launch",
+				"program": "${workspaceFolder}/run.py",
+				"justMyCode": false,
+			}
+		]
+	}

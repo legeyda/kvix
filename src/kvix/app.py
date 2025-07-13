@@ -215,7 +215,7 @@ class RemoteCommand(Enum):
         return self.value
 
 
-def main(*args: str):
+def run(*args: str):
     parser = ArgumentParser(prog="kvix")
     parser.add_argument(
         "-r",
@@ -249,5 +249,9 @@ def main(*args: str):
         print("already running")
 
 
+def main():
+    run(*(sys.argv[1:]))
+
+
 if __name__ == "__main__":
-    main(*(sys.argv[1:]))
+    main()

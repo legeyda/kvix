@@ -13,7 +13,7 @@ main() {
 run_vscode() {
 	echo 'configuring vscode...'
 	mkdir -p .vscode/venv
-	python -m venv .vscode/venv
+	"$PYTHON" -m venv .vscode/venv
 	.vscode/venv/bin/python -m pip install . tox \
 			types-pkg-resources \
 			types-pynput \

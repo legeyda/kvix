@@ -160,10 +160,8 @@ class ModalWindow:
         self.parent.root.focus_force()
 
     def _maybe_hide_before_show(self):
-        # there is a dilemma, shoud we hide before show, or not
-        # if we do, we get window blinking on reactivate
-        # if we do not, the window is not brought to foreground if already shown in background
-        pass  # self._do_hide()
+        if not self.parent.root.focus_displayof():
+            self._do_hide()
 
     def hide(self) -> None:
         self.parent._exec_in_mainloop(self._do_hide)
