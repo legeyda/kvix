@@ -4,15 +4,15 @@
 name = "kvix"
 dynamic = ["version"]
 dependencies = [
-	"funcy==1.17",
-	"pynput==1.7.6",
-	"pystray==0.19.4",
-	"pygobject==3.46.0",
-	"pkgconfig==1.5.5",
-	"pyclip==0.7.0",
-	"PyYAML==6.0.1",
-	"Jinja2==3.1.2",
-	"tk==0.1.0"
+	"funcy",
+	"pynput",
+	"pystray",
+	"pygobject",
+	"pkgconfig",
+	"pyclip",
+	"PyYAML",
+	"Jinja2",
+	"tk",
 ]
 readme = "README.md"
 
@@ -20,7 +20,7 @@ readme = "README.md"
 kvix = "kvix.app:main"
 
 [build-system]
-requires = [ "setuptools==68.2.2", "setuptools-git-versioning==1.13.5", ]
+requires = [ "setuptools", "setuptools-git-versioning", ]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.package-dir]

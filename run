@@ -1,13 +1,17 @@
 #!/usr/bin/env sh
-set -eu
+set -eux
 
 # env: PYTHON?
 # env: USE_VENV?
 main() {
 	: "${PYTHON:=python3}"
-	for target in "$@"; do
-		"run_$target"
-	done
+	#: "${KVIX_PYENV_PYTHON_VERSION:=miniconda3-3.11-25.1.1-2}"
+
+
+	_main__subcommand="$1"
+	shift
+	"run_$_main__subcommand" "$@"
+	unset _main__subcommand
 }
 
 run_vscode() {
@@ -104,5 +108,153 @@ run_publish() {
 	"$PYTHON" -m twine upload --repository pypi dist/*
 	echo 'done uploading artifacts to pypi'
 }
+
+
+
+
+
+
+run_py() {
+	docker rm --force kvix-dev 2>/dev/null || true
+
+	util_base_image
+	run_install_pyenv
+
+	# python version
+	_run_py__current_version="${KVIX_PYENV_PYTHON_VERSION:-miniconda3-3.11-25.1.1-2}"
+	if [ "$_run_py__current_version" != "${_run_py__cached_version:-}" ]; then
+		_run_py__cached_version="$_run_py__current_version"		
+		docker run --interactive --rm --name=kvix-dev --env=HOME --env=PYENV_HOME --env=_run_py__cached_version="$_run_py__cached_version" \
+			--volume="$HOME:$HOME" \
+			"--user=$(id -u):$(id -g)" \
+			kvix-dev bash -euc '"$PYENV_HOME"/bin/pyenv install --skip-existing "$_run_py__cached_version"'
+		_run_py__prefix=$(pyenv prefix "$_run_py__cached_version")
+	fi
+
+	# python venv
+	_run_py__current_venv="$HOME/.cache/kvix-dev/venv/$_run_py__current_version"
+	if [ "$_run_py__current_venv" != "${_run_py__cached_venv:-}" ]; then
+		_run_py__cached_venv="$_run_py__current_venv"
+		"$_run_py__prefix/bin/python" -m venv "$_run_py__cached_venv"
+		docker run --interactive --rm --name=kvix-dev --env=_run_py__cached_venv="$_run_py__cached_venv" --env=HOME \
+				"--user=$(id -u):$(id -g)" \
+				--volume="$HOME:$HOME" \
+				--workdir="$(pwd)" \
+				kvix-dev sh -euc '"$_run_py__cached_venv"/bin/pip install .[dev]'
+	fi
+
+
+	# run
+	"$_run_py__cached_venv"/bin/python "$@"
+}
+
+run_install_pyenv() {
+	: "${PYENV_HOME:=$HOME/.pyenv}"
+	export PYENV_HOME
+	if [ ! -x "$PYENV_HOME/bin/pyenv" ]; then
+		mkdir -p "$PYENV_HOME"
+		docker run --interactive --rm --name=kvix-dev --env=HOME --env=PYENV_HOME \
+			--volume="$PYENV_HOME:$PYENV_HOME" --workdir="$PYENV_HOME" \
+			"--user=$(id -u):$(id -g)" \
+			alpine/git:v2.49.1 clone https://github.com/pyenv/pyenv.git .
+	fi{
+	if command -v git > /dev/null; then
+		git "$@"
+	elif command -v docker > /dev/null; then
+		docker pull alpine/git > /dev/null
+		docker run --interactive --tty --rm --user=$(id -u):$(id -g) --env=HOME="$HOME" \
+				--volume=/etc/passwd:/etc/passwd:ro --volume=/etc/group:/etc/group:ro \
+				--volume=/:/host-root-fs \
+				--workdir=/host-root-fs"$(pwd)" \
+				alpine/git "$@"
+	else
+		echo 'util_git: neither git nor docker avilable' >&2
+	fi
+}
+}
+
+util_docker_available() {
+	if [ -z "${_util_docker_available:-}" ]; then
+		if docker run hello-world > /dev/null 2>&1; then
+			_util_docker_available=true
+		else
+			_util_docker_available=false
+		fi
+	fi
+	if [ true != "$_util_docker_available" ]; then
+		return 1
+	fi
+}
+
+
+
+
+
+
+util_base_image() {
+	if [ true = "${_util_base_image__flag:-false}" ]; then
+		return
+	fi
+
+	if util_docker_available; then
+		docker build --file=- --tag=kvix-dev --progress=plain . <<EOF
+FROM ubuntu
+RUN apt-get --yes update && apt-get --yes install pkg-config libcairo2-dev build-essential
+RUN apt-get --yes install libgirepository1.0-dev
+RUN apt-get --yes install curl git
+RUN apt-get --yes install libncurses-dev libreadline-dev libssl-dev
+RUN apt-get --yes install libc6-dev
+RUN apt-get --yes install cmake
+RUN apt-get --yes install libgirepository-2.0-dev
+EOF
+	fi
+	_util_base_image__flag=true
+}
+
+
+
+
+
+
+
+
+
+util_profile() {
+	set +eu
+	. "$HOME/.profile"
+	set -eu
+}
+
+util_git() {
+	if command -v git > /dev/null; then
+		git "$@"
+	elif command -v docker > /dev/null; then
+		docker pull alpine/git > /dev/null
+		docker run --interactive --tty --rm --user=$(id -u):$(id -g) --env=HOME="$HOME" \
+				--volume=/etc/passwd:/etc/passwd:ro --volume=/etc/group:/etc/group:ro \
+				--volume=/:/host-root-fs \
+				--workdir=/host-root-fs"$(pwd)" \
+				alpine/git "$@"
+	else
+		echo 'util_git: neither git nor docker avilable' >&2
+	fi
+}
+
+util_git_clone() {
+	util_git clone "$@"
+}
+
+# fun: util_lineinfile LINE FILE
+util_lineinfile() {
+	if [ -s "$2" ]; then
+		if grep -F -q "$1" "$2"; then
+			return
+		fi
+		printf '\n%s' "$1" >> "$2"
+	elif [ -f "$2" ]; then
+		printf '%s' "$1" > "$2"
+	fi
+}
+
 
 main "$@" # entry point
