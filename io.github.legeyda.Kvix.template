@@ -1,0 +1,36 @@
+id: io.github.legeyda.Kvix
+runtime: org.gnome.Platform
+runtime-version: "48"
+sdk: org.gnome.Sdk
+command: kvix
+#command: /bin/sh
+modules:
+  - deps.json
+  - flatpak-tkinter.json
+
+  - name: install-kvix
+    buildsystem: simple
+    build-commands:
+      - "pip3 install --verbose --exists-action=i --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} kvix --no-build-isolation"
+    sources:
+      - type: file
+        path: wheel/{{ kvix_wheel_file }}
+
+
+  - name: copy-runner
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 kvix /app/bin/kvix
+    sources:
+      - type: script
+        dest-filename: kvix
+        commands:
+          - #!/bin/sh
+          - export PYSTRAY_BACKEND=xorg # ValueError: Namespace AyatanaAppIndicator3 not available
+          - /usr/bin/python3 -m kvix.app
+
+finish-args:
+  - --socket=x11
+  - --share=network
+  - --filesystem=host
+

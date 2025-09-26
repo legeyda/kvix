@@ -7,6 +7,7 @@ main() {
 	: "${PYTHON:=python3}"
 	#: "${KVIX_PYENV_PYTHON_VERSION:=miniconda3-3.11-25.1.1-2}"
 
+	target="${TARGET:-./target}"
 
 	_main__subcommand="$1"
 	shift
@@ -71,6 +72,48 @@ run_pyproject() {
 	echo done building pyproject
 }
 
+run_flatpak() {
+
+	# build wheel
+	run_flatpak_target="$target"/flatpak
+	rm -rf "$run_flatpak_target"/wheel
+	mkdir -p "$run_flatpak_target"/wheel
+	python -m build --wheel --outdir="$run_flatpak_target"/wheel
+	kvix_wheel_file=$(ls "$run_flatpak_target"/wheel)
+
+	#
+	sed -e "s|{{ *kvix_wheel_file *}}|$kvix_wheel_file|g" io.github.legeyda.Kvix.template > "$run_flatpak_target"/manifest.yaml
+
+
+
+	# python3 ./script/pyproject_toml_deps.py > "$run_flatpak_target"/requirements.txt
+
+	# run_flatpak_pip_generator \
+	# 		--runtime='org.freedesktop.Sdk//25.08' \
+ 	# 		--pyproject-file=pyproject.toml \
+	# 		--output="$run_flatpak_target/deps.json"
+
+	
+	for x in tkinter ; do #appindicator
+		cp script/flatpak-$x.json "$target/flatpak"
+	done
+
+	flatpak run org.flatpak.Builder --force-clean --user --install-deps-from=flathub --repo=repo --install "$run_flatpak_target"/builddir "$run_flatpak_target"/manifest.yaml
+	flatpak run io.github.legeyda.Kvix
+}
+
+run_flatpak_pip_generator() {
+	run_flatpak_pip_generator_script="$target"/flatpak-pip-generator.py
+	if [ ! -e "$run_flatpak_pip_generator_script" ]; then
+		mkdir -p "$target"
+		curl --fail --silent --show-error --location --output "$run_flatpak_pip_generator_script" \
+				'https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/refs/heads/master/pip/flatpak-pip-generator.py'
+	fi
+	python3 "$run_flatpak_pip_generator_script" "$@"
+	unset run_flatpak_pip_generator_script
+}
+
+
 # env: USE_VENV
 # env: python
 run_pyinstaller() {
@@ -128,7 +171,7 @@ run_py() {
 			--volume="$HOME:$HOME" \
 			"--user=$(id -u):$(id -g)" \
 			kvix-dev bash -euc '"$PYENV_HOME"/bin/pyenv install --skip-existing "$_run_py__cached_version"'
-		_run_py__prefix=$(pyenv prefix "$_run_py__cached_version")
+		_run_py__prefix=$("$PYENV_HOME"/bin/pyenv prefix "$_run_py__cached_version")
 	fi
 
 	# python venv
@@ -153,24 +196,15 @@ run_install_pyenv() {
 	export PYENV_HOME
 	if [ ! -x "$PYENV_HOME/bin/pyenv" ]; then
 		mkdir -p "$PYENV_HOME"
-		docker run --interactive --rm --name=kvix-dev --env=HOME --env=PYENV_HOME \
-			--volume="$PYENV_HOME:$PYENV_HOME" --workdir="$PYENV_HOME" \
-			"--user=$(id -u):$(id -g)" \
-			alpine/git:v2.49.1 clone https://github.com/pyenv/pyenv.git .
-	fi{
-	if command -v git > /dev/null; then
-		git "$@"
-	elif command -v docker > /dev/null; then
-		docker pull alpine/git > /dev/null
-		docker run --interactive --tty --rm --user=$(id -u):$(id -g) --env=HOME="$HOME" \
-				--volume=/etc/passwd:/etc/passwd:ro --volume=/etc/group:/etc/group:ro \
-				--volume=/:/host-root-fs \
-				--workdir=/host-root-fs"$(pwd)" \
-				alpine/git "$@"
-	else
-		echo 'util_git: neither git nor docker avilable' >&2
+		if command -v git 2>/dev/null; then
+			git clone https://github.com/pyenv/pyenv.git "$PYENV_HOME"
+		else
+			docker run --interactive --rm --name=kvix-dev --env=HOME --env=PYENV_HOME \
+				--volume="$PYENV_HOME:$PYENV_HOME" --workdir="$PYENV_HOME" \
+				"--user=$(id -u):$(id -g)" \
+				alpine/git:v2.49.1 clone https://github.com/pyenv/pyenv.git .
+		fi
 	fi
-}
 }
 
 util_docker_available() {

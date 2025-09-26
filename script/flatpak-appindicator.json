@@ -1,0 +1,26 @@
+{
+  "name": "appindicator",
+  "buildsystem": "simple",
+  "build-commands": [
+    "pip3 install --prefix=${FLATPAK_DEST} ."
+  ],
+  "sources": [
+    {
+      "type": "git",
+      "url": "github.com/ubuntu/gnome-shell-extension-appindicator",
+      "commit": "v61"
+    }
+  ],
+  "modules": [
+    {
+      "name": "tcl8.6",
+      "sources": [
+        {
+          "type": "git",
+          "url": "github.com/ubuntu/gnome-shell-extension-appindicator",
+          "commit": "v61"
+        }
+      ]
+    }
+  ]
+}
