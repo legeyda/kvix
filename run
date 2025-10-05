@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-set -eux
+set -eu
 
 # env: PYTHON?
 # env: USE_VENV?
@@ -133,60 +133,74 @@ run_build() {
 }
 
 
-run_build_portable() {
-	# https://github.com/bjia56/portable-python
-	# https://github.com/astral-sh/python-build-standalone
-
-
-	if [ ! -e "$target"/cache/cpython-3.13.7+20250918-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz ]; then
-		mkdir -p "$target/cache"
-		curl --fail --silent --show-error --location --output "$target"/cache/cpython-3.13.7+20250918-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz \
-				https://github.com/astral-sh/python-build-standalone/releases/download/20250918/cpython-3.13.7+20250918-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz
+download_file() {
+	if [ -f ./build/download/"$2" ]; then
+		return
 	fi
+	mkdir -p ./build/download
+	curl --fail --silent --show-error --location --output ./build/download/"$2" "$1"
+}
 
-	rm -rf "$target"/portable
-	mkdir -p "$target"/portable
-	tar -xzvf "$target"/cache/cpython-3.13.7+20250918-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz --directory="$target"/portable
-	"$target"/portable/python/bin/python -m pip install 'setuptools<81' 'build==1.0.3'
+run_build_python() {
+	# build portable python distribution with dependencies
 
+	if [ -f ./build/python/python.tar.gz ]; then
+		return
+	fi
+	
+	# download portable dist
+	download_file https://github.com/astral-sh/python-build-standalone/releases/download/20250918/cpython-3.13.7+20250918-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz python.tar.gz
+	mkdir -p ./build/python	
+	(cd ./build/python && rm -rf python && tar xzvf ../download/python.tar.gz)
+
+	# patch libtcl and libtk
+	download_file https://archive.ubuntu.com/ubuntu/pool/main/t/tcl8.6/libtcl8.6_8.6.14+dfsg-1build1_amd64.deb libtcl.deb
+	download_file https://archive.ubuntu.com/ubuntu/pool/main/t/tk8.6/libtk8.6_8.6.14-1build1_amd64.deb libtk.deb
+	for x in libtcl libtk; do
+		mkdir -p ./build/python/"$x"
+		(cd ./build/python/"$x" && ar x ../../download/$x.deb && tar --zstd -xvf data.tar.zst)
+		rm -f ./build/python/python/lib/${x}8.6.so
+		(cd ./build/python && cp ./$x/usr/lib/x86_64-linux-gnu/${x}8.6.so ./python/lib )
+	done
+
+	./build/python/python/bin/python -m pip install 'setuptools<81'
 	util_base_image
 	docker run --interactive --rm --name=kvix-dev \
 			"--user=$(id -u):$(id -g)" \
 			--volume="$(pwd):/workdir" \
 			--workdir=/workdir \
-			kvix-dev "$target"/portable/python/bin/python -m pip install .
+			kvix-dev ./build/python/python/bin/python -m pip install .
+	./build/python/python/bin/python -m pip uninstall --yes kvix
 
-	cat > "$target"/portable/run <<'EOF'
+	# bundle python dist
+	(cd ./build/python && tar czf ./python.tar.gz python)
+
+}
+
+run_build_portable() {
+	run_build_python
+	rm -rf ./build/portable
+	mkdir -p ./build/portable
+	cp -r ./build/python/python ./build/portable
+	./build/portable/python/bin/python -m pip install .
+	version=$(./build/portable/python/bin/python -c 'from importlib.metadata import version; print(version("kvix"))')
+
+	mkdir -p ./build/portable/kvix-"$version"-portable
+	mv ./build/portable/python ./build/portable/kvix-"$version"-portable
+	cat > ./build/portable/kvix-"$version"-portable/run <<'EOF'
 #!/bin/sh
 script_dir=$(dirname "$0")
 script_dir=$(CDPATH= cd -- "$script_dir" && pwd -P)
 exec "$script_dir"/python/bin/python -m kvix.app "$@"
 EOF
-	chmod +x "$target"/portable/run
+	chmod +x ./build/portable/kvix-"$version"-portable/run
 
-
-
-	x=$(mktemp -d)
-	curl --fail --silent --show-error --location --output "$x"/ar.deb \
-			'http://archive.ubuntu.com/ubuntu/pool/main/t/tk8.6/libtk8.6_8.6.14-1build1_amd64.deb'
-  	( cd "$x" && ar xv ar.deb && tar --zstd -xvf data.tar.zst )
-	cp "$x"/usr/lib/x86_64-linux-gnu/libtk8.6.so "$target"/portable/python/lib
-	rm -rf "$x"
-
-	x=$(mktemp -d)
-	curl --fail --silent --show-error --location --output "$x"/ar.deb \
-			'http://archive.ubuntu.com/ubuntu/pool/main/t/tcl8.6/libtcl8.6_8.6.14+dfsg-1build1_amd64.deb'
-  	( cd "$x" && ar xv ar.deb && tar --zstd -xvf data.tar.zst )
-	cp "$x"/usr/lib/x86_64-linux-gnu/libtcl8.6.so "$target"/portable/python/lib
-	rm -rf "$x"
-
-	tar czf "$target"/portable/kvix-portable.tar.gz --directory="$target"/portable run python
-	
+	(cd ./build/portable && tar czf ../../dist/kvix-"$version"-portable.tar.gz kvix-"$version"-portable)
 }
 
 run_build_debug() {
 	rm -rf  "$target"/debug/python "$target"/debug/python-full-3.13.7-linux-x86_64
-	unzip "$target"/cache/python-full-3.13.7-linux-x86_64.zip -d "$target"/debug
+	unzip ./build/download/python-full-3.13.7-linux-x86_64.zip -d "$target"/debug
 	mv "$target"/debug/python-full-3.13.7-linux-x86_64 "$target"/debug/python
 
 	util_base_image

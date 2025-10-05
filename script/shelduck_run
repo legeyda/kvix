@@ -1,0 +1,3 @@
+#!/bin/sh
+. script/shelduck.sh
+shelduck run "$@"
