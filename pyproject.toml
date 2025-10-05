@@ -12,7 +12,6 @@ dependencies = [
 	"pyclip",
 	"PyYAML",
 	"Jinja2",
-	"tk",
 ]
 readme = "README.md"
 
@@ -20,7 +19,8 @@ readme = "README.md"
 kvix = "kvix.app:main"
 
 [build-system]
-requires = [ "setuptools", "setuptools-git-versioning", ]
+# The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81
+requires = [ "setuptools<81", "setuptools-git-versioning", ]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.package-dir]

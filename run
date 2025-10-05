@@ -73,33 +73,35 @@ run_pyproject() {
 }
 
 run_flatpak() {
+	# requires requirements-parser build
 
-	# build wheel
+	# build kvix wheel
 	run_flatpak_target="$target"/flatpak
 	rm -rf "$run_flatpak_target"/wheel
 	mkdir -p "$run_flatpak_target"/wheel
 	python -m build --wheel --outdir="$run_flatpak_target"/wheel
 	kvix_wheel_file=$(ls "$run_flatpak_target"/wheel)
 
-	#
-	sed -e "s|{{ *kvix_wheel_file *}}|$kvix_wheel_file|g" io.github.legeyda.Kvix.template > "$run_flatpak_target"/manifest.yaml
+	# apply manifest template
+	sed -e "s|{{ *kvix_wheel_file *}}|$kvix_wheel_file|g" flatpak/kvix.template \
+			> "$run_flatpak_target"/manifest.yaml
 
+	# generate dependency module
+	run_flatpak_pip_generator \
+			--runtime='org.freedesktop.Sdk//25.08' \
+ 			--pyproject-file=pyproject.toml \
+			--output="$run_flatpak_target/deps.json"
 
-
-	# python3 ./script/pyproject_toml_deps.py > "$run_flatpak_target"/requirements.txt
-
-	# run_flatpak_pip_generator \
-	# 		--runtime='org.freedesktop.Sdk//25.08' \
- 	# 		--pyproject-file=pyproject.toml \
-	# 		--output="$run_flatpak_target/deps.json"
-
-	
+	# copy flatpak files
 	for x in tkinter ; do #appindicator
-		cp script/flatpak-$x.json "$target/flatpak"
+		cp flatpak/flatpak-$x.json "$target/flatpak"
 	done
 
-	flatpak run org.flatpak.Builder --force-clean --user --install-deps-from=flathub --repo=repo --install "$run_flatpak_target"/builddir "$run_flatpak_target"/manifest.yaml
-	flatpak run io.github.legeyda.Kvix
+	# build flatpak
+
+	flatpak run org.flatpak.Builder --force-clean --user --install-deps-from=flathub --repo=repo "$run_flatpak_target"/builddir "$run_flatpak_target"/manifest.yaml
+	#flatpak run io.github.legeyda.Kvix
+	flatpak build-bundle repo "$run_flatpak_target"/kvix.flatpak io.github.legeyda.Kvix --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
 }
 
 run_flatpak_pip_generator() {
@@ -111,6 +113,92 @@ run_flatpak_pip_generator() {
 	fi
 	python3 "$run_flatpak_pip_generator_script" "$@"
 	unset run_flatpak_pip_generator_script
+}
+
+
+
+ensure_schelduck() {
+	if [ ! -e "$target"/shelduck.sh ]; then
+		curl --fail --silent --show-error --location --output "$target"/shelduck.sh \
+				https://github.com/legeyda/shelduck/releases/latest/download/shelduck.sh
+	fi
+	. "$target"/shelduck.sh
+}
+
+run_build() {
+	ensure_schelduck
+	sub=$(echo "$1" | tr - _)
+	shift
+	run_build_"$sub" "$@"
+}
+
+
+run_build_portable() {
+	# https://github.com/bjia56/portable-python
+	# https://github.com/astral-sh/python-build-standalone
+
+
+	if [ ! -e "$target"/cache/cpython-3.13.7+20250918-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz ]; then
+		mkdir -p "$target/cache"
+		curl --fail --silent --show-error --location --output "$target"/cache/cpython-3.13.7+20250918-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz \
+				https://github.com/astral-sh/python-build-standalone/releases/download/20250918/cpython-3.13.7+20250918-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz
+	fi
+
+	rm -rf "$target"/portable
+	mkdir -p "$target"/portable
+	tar -xzvf "$target"/cache/cpython-3.13.7+20250918-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz --directory="$target"/portable
+	"$target"/portable/python/bin/python -m pip install 'setuptools<81' 'build==1.0.3'
+
+	util_base_image
+	docker run --interactive --rm --name=kvix-dev \
+			"--user=$(id -u):$(id -g)" \
+			--volume="$(pwd):/workdir" \
+			--workdir=/workdir \
+			kvix-dev "$target"/portable/python/bin/python -m pip install .
+
+	cat > "$target"/portable/run <<'EOF'
+#!/bin/sh
+script_dir=$(dirname "$0")
+script_dir=$(CDPATH= cd -- "$script_dir" && pwd -P)
+exec "$script_dir"/python/bin/python -m kvix.app "$@"
+EOF
+	chmod +x "$target"/portable/run
+
+
+
+	x=$(mktemp -d)
+	curl --fail --silent --show-error --location --output "$x"/ar.deb \
+			'http://archive.ubuntu.com/ubuntu/pool/main/t/tk8.6/libtk8.6_8.6.14-1build1_amd64.deb'
+  	( cd "$x" && ar xv ar.deb && tar --zstd -xvf data.tar.zst )
+	cp "$x"/usr/lib/x86_64-linux-gnu/libtk8.6.so "$target"/portable/python/lib
+	rm -rf "$x"
+
+	x=$(mktemp -d)
+	curl --fail --silent --show-error --location --output "$x"/ar.deb \
+			'http://archive.ubuntu.com/ubuntu/pool/main/t/tcl8.6/libtcl8.6_8.6.14+dfsg-1build1_amd64.deb'
+  	( cd "$x" && ar xv ar.deb && tar --zstd -xvf data.tar.zst )
+	cp "$x"/usr/lib/x86_64-linux-gnu/libtcl8.6.so "$target"/portable/python/lib
+	rm -rf "$x"
+
+	tar czf "$target"/portable/kvix-portable.tar.gz --directory="$target"/portable run python
+	
+}
+
+run_build_debug() {
+	rm -rf  "$target"/debug/python "$target"/debug/python-full-3.13.7-linux-x86_64
+	unzip "$target"/cache/python-full-3.13.7-linux-x86_64.zip -d "$target"/debug
+	mv "$target"/debug/python-full-3.13.7-linux-x86_64 "$target"/debug/python
+
+	util_base_image
+	docker run --interactive --rm --name=kvix-dev \
+			"--user=$(id -u):$(id -g)" \
+			--volume="$(pwd):/workdir" \
+			--workdir=/workdir \
+			kvix-dev "$target"/debug/python/bin/python -m pip install .
+	#
+	"$target"/debug/python/bin/python -m pip install conda-pack
+	"$target"/debug/python/bin/conda-pack -p "$target"/debug/python -o "$target"/debug/dist.tar.gz
+	
 }
 
 
@@ -240,6 +328,7 @@ RUN apt-get --yes install libncurses-dev libreadline-dev libssl-dev
 RUN apt-get --yes install libc6-dev
 RUN apt-get --yes install cmake
 RUN apt-get --yes install libgirepository-2.0-dev
+RUN apt-get --yes update && apt-get --yes install --no-install-recommends clang
 EOF
 	fi
 	_util_base_image__flag=true
