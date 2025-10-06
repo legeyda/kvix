@@ -116,17 +116,7 @@ run_flatpak_pip_generator() {
 }
 
 
-
-ensure_schelduck() {
-	if [ ! -e "$target"/shelduck.sh ]; then
-		curl --fail --silent --show-error --location --output "$target"/shelduck.sh \
-				https://github.com/legeyda/shelduck/releases/latest/download/shelduck.sh
-	fi
-	. "$target"/shelduck.sh
-}
-
 run_build() {
-	ensure_schelduck
 	sub=$(echo "$1" | tr - _)
 	shift
 	run_build_"$sub" "$@"
@@ -195,6 +185,7 @@ exec "$script_dir"/python/bin/python -m kvix.app "$@"
 EOF
 	chmod +x ./build/portable/kvix-"$version"-portable/run
 
+	mkdir -p ./dist
 	(cd ./build/portable && tar czf ../../dist/kvix-"$version"-portable.tar.gz kvix-"$version"-portable)
 }
 
