@@ -144,14 +144,11 @@ run_build_python() {
 	(cd ./build/python && rm -rf python && tar xzvf ../download/python.tar.gz)
 
 	# patch libtcl and libtk
-	download_file https://archive.ubuntu.com/ubuntu/pool/main/t/tcl8.6/libtcl8.6_8.6.14+dfsg-1build1_amd64.deb libtcl.deb
 	download_file https://archive.ubuntu.com/ubuntu/pool/main/t/tk8.6/libtk8.6_8.6.14-1build1_amd64.deb libtk.deb
-	for x in libtcl libtk; do
-		mkdir -p ./build/python/"$x"
-		(cd ./build/python/"$x" && ar x ../../download/$x.deb && tar --zstd -xvf data.tar.zst)
-		rm -f ./build/python/python/lib/${x}8.6.so
-		(cd ./build/python && cp ./$x/usr/lib/x86_64-linux-gnu/${x}8.6.so ./python/lib )
-	done
+	mkdir -p ./build/python/libtk
+	(cd ./build/python/libtk && ar x ../../download/libtk.deb && tar --zstd -xvf data.tar.zst)
+	rm -f ./build/python/python/lib/libtk8.6.so
+	(cd ./build/python && cp ./libtk/usr/lib/x86_64-linux-gnu/libtk8.6.so ./python/lib )
 
 	./build/python/python/bin/python -m pip install 'setuptools<81'
 	util_base_image
