@@ -143,13 +143,29 @@ run_build_python() {
 	mkdir -p ./build/python	
 	(cd ./build/python && rm -rf python && tar xzvf ../download/python.tar.gz)
 
-	# patch libtcl and libtk
-	download_file https://archive.ubuntu.com/ubuntu/pool/main/t/tk8.6/libtk8.6_8.6.14-1build1_amd64.deb libtk.deb
-	mkdir -p ./build/python/libtk
-	(cd ./build/python/libtk && ar x ../../download/libtk.deb && tar --zstd -xvf data.tar.zst)
-	rm -f ./build/python/python/lib/libtk8.6.so
-	(cd ./build/python && cp ./libtk/usr/lib/x86_64-linux-gnu/libtk8.6.so ./python/lib )
+	# patch libtk
+	download_file https://deac-fra.dl.sourceforge.net/project/tcl/Tcl/8.6.14/tk8.6.14-src.tar.gz?viasf=1 libtk-src.tar.gz
 
+	docker build --file=- --tag=kvix-build-libtk --progress=plain . <<EOF
+FROM ubuntu:16.04
+RUN apt-get --yes update && \
+		apt-get --yes install libc6-dev build-essential tcl-dev tk-dev mesa-common-dev libjpeg-dev libtogl-dev && \
+		rm -rf /var/lib/apt/lists/*
+EOF
+
+	docker run --volume ./build:/workdir --workdir=/workdir --rm --user=$(id -u):$(id -g) kvix-build-libtk sh -euc '
+
+rm -rf python/tk8.6.14
+tar xzf download/libtk-src.tar.gz --directory=python
+cd python/tk8.6.14/unix
+./configure
+make
+
+'
+	rm -f build/python/python/lib/libtk8.6.so
+	cp build/python/tk8.6.14/unix/libtk8.6.so build/python/python/lib
+
+	####
 	./build/python/python/bin/python -m pip install 'setuptools<81'
 	util_base_image
 	docker run --interactive --rm --name=kvix-dev \
