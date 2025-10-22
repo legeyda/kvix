@@ -122,102 +122,105 @@ run_build() {
 	run_build_"$sub" "$@"
 }
 
-
-download_file() {
-	if [ -f ./build/download/"$2" ]; then
-		return
-	fi
-	mkdir -p ./build/download
-	curl --fail --silent --show-error --location --output ./build/download/"$2" "$1"
+run_x64_linux() {
+	run_python_x64_linux_portable
+	run_x64_linux_portable
 }
 
-run_build_python() {
-	# build portable python distribution with dependencies
+run_python_x64_linux_portable() {
+	mkdir -p ./build/python_x64_linux_portable
+	cd ./build/python_x64_linux_portable
 
-	if [ -f ./build/python/python.tar.gz ]; then
-		return
-	fi
+	# GET PYTHON PORTABLE DISTRIBUTION
+	docker build --tag=kvix-build-python --progress=plain --file=- . <<'EOF'
+FROM curlimages/curl:8.16.0
+USER 0:0
+RUN mkdir -p /download && curl --fail --silent --show-error --location --output /download/python.tar.gz \
+		https://github.com/astral-sh/python-build-standalone/releases/download/20250918/cpython-3.13.7+20250918-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz
+EOF
 	
-	# download portable dist
-	download_file https://github.com/astral-sh/python-build-standalone/releases/download/20250918/cpython-3.13.7+20250918-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz python.tar.gz
-	mkdir -p ./build/python	
-	(cd ./build/python && rm -rf python && tar xzvf ../download/python.tar.gz)
-
-	# patch libtk
-	download_file https://deac-fra.dl.sourceforge.net/project/tcl/Tcl/8.6.14/tk8.6.14-src.tar.gz?viasf=1 libtk-src.tar.gz
-
-	docker build --file=- --tag=kvix-build-libtk --progress=plain . <<EOF
+	docker run --volume ./:/workdir --workdir=/workdir --rm --user=$(id -u):$(id -g) --name=kvix-build-python kvix-build-python \
+			sh -euc 'cp /download/python.tar.gz ./'
+	rm -rf ./python
+	tar xzvf ./python.tar.gz --directory=./
+	
+	# BUILD LIBTK AGAINS OLD glibc
+	docker build --file=- --tag=kvix-build-libtk --progress=plain . <<'EOF'
 FROM ubuntu:16.04
 RUN apt-get --yes update && \
-		apt-get --yes install libc6-dev build-essential tcl-dev tk-dev mesa-common-dev libjpeg-dev libtogl-dev && \
+		apt-get --yes install curl libc6-dev build-essential tcl-dev tk-dev mesa-common-dev libjpeg-dev libtogl-dev && \
 		rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /build-libtk && \
+		curl --fail --silent --show-error --location --output /build-libtk/tk8.6.14-src.tar.gz \
+				'https://deac-fra.dl.sourceforge.net/project/tcl/Tcl/8.6.14/tk8.6.14-src.tar.gz?viasf=1' && \
+		cd /build-libtk && \
+		tar xzf ./tk8.6.14-src.tar.gz && \
+		cd ./tk8.6.14/unix && \
+		./configure && \
+		make
 EOF
-
-	docker run --volume ./build:/workdir --workdir=/workdir --rm --user=$(id -u):$(id -g) kvix-build-libtk sh -euc '
-
-rm -rf python/tk8.6.14
-tar xzf download/libtk-src.tar.gz --directory=python
-cd python/tk8.6.14/unix
+	docker run --volume ./:/workdir --workdir=/workdir --rm --user=$(id -u):$(id -g) --name=kvix-build-libtk kvix-build-libtk sh -euc '
+mkdir -p ./libtk
+curl --fail --silent --show-error --location --output ./tk8.6.14-src.tar.gz \
+		'https://deac-fra.dl.sourceforge.net/project/tcl/Tcl/8.6.14/tk8.6.14-src.tar.gz?viasf=1'
+tar xzf ./tk8.6.14-src.tar.gz
+cd ./tk8.6.14/unix
 ./configure
 make
-
 '
-	rm -f build/python/python/lib/libtk8.6.so
-	cp build/python/tk8.6.14/unix/libtk8.6.so build/python/python/lib
+	rm -f ./python/lib/libtk8.6.so
+	cp ./tk8.6.14/unix/libtk8.6.so ./python/lib
+}
 
-	####
-	./build/python/python/bin/python -m pip install 'setuptools<81'
-	util_base_image
-	docker run --interactive --rm --name=kvix-dev \
+
+run_x64_linux_portable() {
+
+	mkdir -p ./build/x64_linux_portable/kvix-x64-linux-portable
+	rm -rf   ./build/x64_linux_portable/kvix-x64-linux-portable/python
+	cp -r ./build/python_x64_linux_portable/python ./build/x64_linux_portable/kvix-x64-linux-portable
+
+
+	# install dependencies
+	docker build --file=- --tag=kvix-build-deps --progress=plain . <<'EOF'
+FROM ubuntu
+RUN apt-get --yes update && apt-get --yes install pkg-config libcairo2-dev build-essential
+RUN apt-get --yes install libgirepository1.0-dev
+RUN apt-get --yes install curl git
+RUN apt-get --yes install libncurses-dev libreadline-dev libssl-dev
+RUN apt-get --yes install libc6-dev
+RUN apt-get --yes install cmake
+RUN apt-get --yes install libgirepository-2.0-dev
+RUN apt-get --yes update && apt-get --yes install --no-install-recommends clang
+RUN rm -rf /var/lib/apt/lists/*
+
+EOF
+
+	./build/x64_linux_portable/kvix-x64-linux-portable/python/bin/python -m pip install 'setuptools<81'
+	docker run --interactive --rm --name=kvix-build-deps \
 			"--user=$(id -u):$(id -g)" \
 			--volume="$(pwd):/workdir" \
 			--workdir=/workdir \
-			kvix-dev ./build/python/python/bin/python -m pip install .
-	./build/python/python/bin/python -m pip uninstall --yes kvix
-
-	# bundle python dist
-	(cd ./build/python && tar czf ./python.tar.gz python)
-
-}
-
-run_build_portable() {
-	run_build_python
-	rm -rf ./build/portable
-	mkdir -p ./build/portable
-	cp -r ./build/python/python ./build/portable
-	./build/portable/python/bin/python -m pip install .
-	version=$(./build/portable/python/bin/python -c 'from importlib.metadata import version; print(version("kvix"))')
-
-	mkdir -p ./build/portable/kvix-"$version"-portable
-	mv ./build/portable/python ./build/portable/kvix-"$version"-portable
-	cat > ./build/portable/kvix-"$version"-portable/run <<'EOF'
+			kvix-build-deps ./build/x64_linux_portable/kvix-x64-linux-portable/python/bin/python -m pip install .
+	cat > ./build/x64_linux_portable/kvix-x64-linux-portable/run <<'EOF'
 #!/bin/sh
 script_dir=$(dirname "$0")
 script_dir=$(CDPATH= cd -- "$script_dir" && pwd -P)
 exec "$script_dir"/python/bin/python -m kvix.app "$@"
 EOF
-	chmod +x ./build/portable/kvix-"$version"-portable/run
+	chmod +x ./build/x64_linux_portable/kvix-x64-linux-portable/run
+
+	# archi
+	version=$(./build/x64_linux_portable/kvix-x64-linux-portable/python/bin/python -c 'from importlib.metadata import version; print(version("kvix"))')
+
+	# 
+	rm -rf ./build/x64_linux_portable/kvix-"$version"-x64-linux-portable
+	mv -T ./build/x64_linux_portable/kvix-x64-linux-portable ./build/x64_linux_portable/kvix-"$version"-x64-linux-portable
+
 
 	mkdir -p ./dist
-	(cd ./build/portable && tar czf ../../dist/kvix-"$version"-portable.tar.gz kvix-"$version"-portable)
+	(cd ./build/x64_linux_portable && tar czf ../../dist/kvix-"$version"-x64-linux-portable.tar.gz kvix-"$version"-x64-linux-portable)
 }
 
-run_build_debug() {
-	rm -rf  "$target"/debug/python "$target"/debug/python-full-3.13.7-linux-x86_64
-	unzip ./build/download/python-full-3.13.7-linux-x86_64.zip -d "$target"/debug
-	mv "$target"/debug/python-full-3.13.7-linux-x86_64 "$target"/debug/python
-
-	util_base_image
-	docker run --interactive --rm --name=kvix-dev \
-			"--user=$(id -u):$(id -g)" \
-			--volume="$(pwd):/workdir" \
-			--workdir=/workdir \
-			kvix-dev "$target"/debug/python/bin/python -m pip install .
-	#
-	"$target"/debug/python/bin/python -m pip install conda-pack
-	"$target"/debug/python/bin/conda-pack -p "$target"/debug/python -o "$target"/debug/dist.tar.gz
-	
-}
 
 
 # env: USE_VENV
@@ -264,6 +267,8 @@ run_publish() {
 
 
 run_py() {
+
+
 	docker rm --force kvix-dev 2>/dev/null || true
 
 	util_base_image
