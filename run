@@ -170,6 +170,7 @@ make
 '
 	rm -f ./python/lib/libtk8.6.so
 	cp ./tk8.6.14/unix/libtk8.6.so ./python/lib
+	cd ../..
 }
 
 

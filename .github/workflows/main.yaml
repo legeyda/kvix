@@ -88,6 +88,7 @@ jobs:
     needs:
       - build_wheels
       - build_pyinstaller_linux
+      - build_x64_linux_portable
       - build_pyinstaller_windows
     runs-on: ubuntu-latest
     steps:
@@ -104,6 +105,11 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: build_pyinstaller_linux_artifact
+          path: ./dist/
+      - name: download build_x64_linux_portable artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: build_build_x64_linux_portable
           path: ./dist/
       - name: download pyinstaller windows artifact
         uses: actions/download-artifact@v3
