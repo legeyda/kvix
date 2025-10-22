@@ -20,7 +20,7 @@ jobs:
           path: dist/*
 
   publish_pypi:
-    if: startsWith(github.event.ref, 'refs/tags/v')
+    #if: startsWith(github.event.ref, 'refs/tags/v')
     name: publish package to pypi
     needs:
       - build_wheels
@@ -93,7 +93,7 @@ jobs:
   #         path: dist/*
 
   publish_release:
-    if: startsWith(github.event.ref, 'refs/tags/v')
+    # if: startsWith(github.event.ref, 'refs/tags/v')
     needs:
       - build_wheels
       # - build_pyinstaller_linux
