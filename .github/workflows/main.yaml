@@ -17,6 +17,7 @@ jobs:
           path: dist/*
 
   publish_pypi:
+    if: startsWith(github.event.ref, 'refs/tags/v')
     name: publish package to pypi
     needs:
       - build_wheels
@@ -83,6 +84,7 @@ jobs:
   #         path: dist/*
 
   publish_release:
+    if: startsWith(github.event.ref, 'refs/tags/v')
     needs:
       - build_wheels
       # - build_pyinstaller_linux
@@ -107,7 +109,7 @@ jobs:
       - name: download build_x64_linux_portable artifact
         uses: actions/download-artifact@v4
         with:
-          name: build_build_x64_linux_portable
+          name: build_x64_linux_portable_artifact
           path: ./dist/
       # - name: download pyinstaller windows artifact
       #   uses: actions/download-artifact@v4
