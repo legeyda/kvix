@@ -18,7 +18,6 @@ jobs:
 
   publish_pypi:
     name: publish package to pypi
-    if: startsWith(github.event.ref, 'refs/tags/v')
     needs:
       - build_wheels
     runs-on: ubuntu-latest
@@ -33,6 +32,7 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
   build_pyinstaller_linux:
+    if: false
     needs:
       - build_wheels
     runs-on: ubuntu-latest
@@ -57,6 +57,7 @@ jobs:
           path: dist/*
 
   build_pyinstaller_windows:
+    if: false
     needs:
       - build_wheels
     runs-on: windows-latest
@@ -84,12 +85,11 @@ jobs:
           path: dist/*
 
   publish_release:
-    if: startsWith(github.event.ref, 'refs/tags/v')
     needs:
       - build_wheels
-      - build_pyinstaller_linux
+      # - build_pyinstaller_linux
       - build_x64_linux_portable
-      - build_pyinstaller_windows
+      # - build_pyinstaller_windows
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
