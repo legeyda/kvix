@@ -6,6 +6,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
       - uses: actions/setup-python@v3
       # - name: check # todo add checks
       #   run: sh ./run check
@@ -38,6 +41,9 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-tags: true
+  #         fetch-depth: 0
   #     - uses: actions/setup-python@v3
   #     - run: sudo apt install libgirepository1.0-dev
   #     - run: sh ./run pyinstaller
@@ -50,6 +56,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
       - run: sh ./run x64_linux_portable
       - uses: actions/upload-artifact@v4
         with:
@@ -94,6 +103,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-tags: true
           fetch-depth: 0
 
       - name: download wheels artifact
