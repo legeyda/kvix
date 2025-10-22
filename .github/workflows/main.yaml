@@ -11,7 +11,7 @@ jobs:
       #   run: sh ./run check
       - name: build
         run: sh ./run pyproject
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: build_wheels_artifact
           path: dist/*
@@ -41,7 +41,7 @@ jobs:
       - uses: actions/setup-python@v3
       - run: sudo apt install libgirepository1.0-dev
       - run: sh ./run pyinstaller
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: build_pyinstaller_linux_artifact
           path: dist/*
@@ -51,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sh ./run x64_linux_portable
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: build_x64_linux_portable_artifact
           path: dist/*
@@ -78,7 +78,7 @@ jobs:
             https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-python-cairo-1.25.1-1-any.pkg.tar.zst \
             https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-python-pillow-10.1.0-1-any.pkg.tar.zst
           sh -c 'USE_VENV=false ./run msys2pyinstaller'
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: build_pyinstaller_windows_artifact
           path: dist/*
