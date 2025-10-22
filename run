@@ -67,7 +67,7 @@ maybe_create_venv() {
 run_pyproject() {
 	echo building pyproject...
 	maybe_create_venv
-	"$PYTHON" -m pip install install 'build==1.0.3'
+	"$PYTHON" -m pip install 'build==1.0.3'
 	"$PYTHON" -m build
 	echo done building pyproject
 }
