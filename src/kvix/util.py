@@ -62,7 +62,12 @@ class ThreadRouter:
 def get_data_dir() -> pathlib.Path:
     home = pathlib.Path.home()
     if "/" in str(home):
-        return home.joinpath(".local", "share", "kvix")
+        data_home = os.getenv("XDG_DATA_HOME")
+        if data_home:
+            data_home = pathlib.Path(data_home)
+        else:
+            data_home = home.joinpath(".local", "share")
+        return data_home.joinpath("kvix")
     elif "\\" in str(home):
         appdata = os.getenv("APPDATA")
         if appdata:
@@ -76,7 +81,12 @@ def get_data_dir() -> pathlib.Path:
 def get_config_dir() -> pathlib.Path:
     home = pathlib.Path.home()
     if "/" in str(home):
-        return home.joinpath(".config", "kvix")
+        config_home = os.getenv("XDG_CONFIG_HOME")
+        if config_home:
+            config_home = pathlib.Path(config_home)
+        else:
+            config_home = home.joinpath(".config")
+        return config_home.joinpath("kvix")
     elif "\\" in str(home):
         appdata = os.getenv("APPDATA")
         if appdata:
@@ -90,7 +100,12 @@ def get_config_dir() -> pathlib.Path:
 def get_cache_dir() -> pathlib.Path:
     home = pathlib.Path.home()
     if "/" in str(home):
-        return home.joinpath(".cache", "kvix")
+        cache_home = os.getenv("XDG_CACHE_HOME")
+        if cache_home:
+            cache_home = pathlib.Path(cache_home)
+        else:
+            cache_home = home.joinpath(".cache")
+        return cache_home.joinpath("kvix")
     elif "\\" in str(home):
         appdata = os.getenv("LOCALAPPDATA")
         if appdata:
