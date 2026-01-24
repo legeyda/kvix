@@ -14,8 +14,12 @@ class Action(BaseAction):
     def _run(self, **args: Any) -> None:
         def create_entry(builder: DialogBuilder, key: str, item: Item, title: str):
             entry = builder.create_entry(key, title)
-            builder.on_load(lambda _: entry.set_value(str(item.read())))
-            builder.on_save(lambda _: item.write(str(entry.get_value())))
+
+            def x(_):
+                entry.value = str(item.read())
+
+            builder.on_load(x)
+            builder.on_save(lambda _: item.write(str(entry.value)))
 
         def create_dialog(
             builder: DialogBuilder,

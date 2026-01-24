@@ -124,16 +124,9 @@ class Dialog(Window):
     auto_destroy = Propty(bool, default_value=True)  # todo remove?
 
 
-class DialogWidget:
-    def get_value(self) -> str:
-        raise NotImplementedError()
-
-    def set_value(self, value: str) -> None:
-        raise NotImplementedError()
-
-
-class DialogEntry(DialogWidget):
-    pass
+class DialogEntry:
+    title = Propty(str)
+    value = Propty(str)
 
 
 class DialogBuilder:
@@ -141,8 +134,19 @@ class DialogBuilder:
         self._on_load: list[Callable[[Any | None], None]] = []
         self._on_save: list[Callable[[Any | None], Any]] = []
         self._widgets: dict[str, DialogWidget] = {}
+        self._entries: dict[str, DialogEntry] = {}
 
-    def create_entry(self, id: str, title: str) -> DialogEntry:
+    def create_entry(self, id: str, title: str | None = None) -> DialogEntry:
+        result = self._instantiate_entry()
+        if title:
+            result.title = title
+        self._entries[id] = result
+        return result
+
+    def get_entry(self, id: str):
+        return self._entries[id]
+
+    def _instantiate_entry(self) -> DialogEntry:
         raise NotImplementedError()
 
     def widget(self, id: str) -> DialogWidget:

@@ -6,13 +6,15 @@ from typing import Any, Callable, Protocol, cast, Sequence
 
 import funcy
 import re
+import os
+from pathlib import Path
 
 import kvix
 from kvix import Action, ActionType, Context, Item, ItemAlt, Ui
 from kvix.l10n import _
-from kvix.stor import Stor
+from kvix.stor import Stor, YamlFile
 from kvix.util import Propty, query_match, apply_template
-from kvix.util import ThreadRouter
+from kvix.util import ThreadRouter, get_data_dir
 
 unnamed_text = _("Unnamed").setup(ru_RU="Без названия", de_DE="Ohne Titel")
 execute_text = _("Execute").setup(ru_RU="Выполнить", de_DE="Ausführen")
@@ -83,8 +85,7 @@ class ActionFactory(Protocol):
         description: str = "",
         pattern: str = "",
         **config: Any,
-    ) -> Action:
-        ...
+    ) -> Action: ...
 
 
 class BaseActionType(ActionType):
@@ -133,42 +134,43 @@ class BaseActionType(ActionType):
         return value
 
     def create_editor(self, builder: kvix.DialogBuilder) -> None:
-        builder.create_entry("title", str(title_text))
-        builder.create_entry("description", str(description_text))
-        builder.create_entry("pattern", str(pattern_text))
+        title_entry = builder.create_entry("title", str(title_text))
+        description_entry = builder.create_entry("description", str(description_text))
+        pattern_entry = builder.create_entry("pattern", str(pattern_text))
+        entry_map = {}
         for key, text in self.config_entry_texts.items():
-            builder.create_entry(key, str(text))
+            entry_map[key] = builder.create_entry(key, str(text))
 
         def load(value: Any | None):
             if isinstance(value, Action):
-                builder.widget("title").set_value(value.title)
-                builder.widget("description").set_value(value._description)
-                builder.widget("pattern").set_value(value._pattern)
+                title_entry.value = value.title
+                description_entry.value = value._description
+                pattern_entry.value = value._pattern
                 for key in self.config_entry_texts:
-                    builder.widget(key).set_value(value._config[key])
+                    entry_map[key].value = value._config[key]
 
         builder.on_load(load)
 
         def save(value: Any | None) -> Any:
             if isinstance(value, Action):
-                value.title = builder.widget("title").get_value()
-                value._description = builder.widget("description").get_value()
-                value._pattern = builder.widget("pattern").get_value()
+                value.title = title_entry.value
+                value._description = description_entry.value
+                value._pattern = pattern_entry.value
                 for key in self.config_entry_texts:
-                    value._config[key] = builder.widget(key).get_value()
+                    value._config[key] = entry_map[key].get_value()
             elif isinstance(value, dict):
-                value["title"] = builder.widget("title").get_value()
-                value["description"] = builder.widget("description").get_value()
-                value["pattern"] = builder.widget("pattern").get_value()
+                value["title"] = title_entry.value
+                value["description"] = description_entry.value
+                value["pattern"] = pattern_entry.value
                 for key in self.config_entry_texts:
-                    value[key] = builder.widget(key).get_value()
+                    value[key] = entry_map[key].get_value()
             elif not value:
                 value = self.create_default_action(
-                    builder.widget("title").get_value(),
-                    builder.widget("description").get_value(),
-                    builder.widget("pattern").get_value(),
+                    title_entry.value,
+                    description_entry.value,
+                    pattern_entry.value,
                     **{
-                        key: builder.widget(key).get_value()
+                        key: entry_map[key].value
                         for key in self.config_entry_texts.keys() - BaseActionType.BUILTIN_PARAMS
                     },
                 )
@@ -191,6 +193,10 @@ class BaseAction(Action):
         self._description = description or title
         self._pattern = pattern
         self._set_params(**params)
+        self._post_init()
+
+    def _post_init(self):
+        pass
 
     def _set_params(self, **params: Any) -> None:
         self._config = {**params}  # todo rename to params
@@ -242,6 +248,15 @@ class BaseAction(Action):
         }
 
 
+def get_files_in_dir(root_dir: Path | str):
+    if not Path(root_dir).is_dir():
+        return
+    with os.scandir(Path(root_dir)) as entries:
+        for item in entries:
+            if item.is_file() and item.name.endswith(".yaml"):
+                yield (item.name, item.path)
+
+
 class BaseActionRegistry(kvix.ActionRegistry):
     def __init__(self, stor: Stor):
         self.stor: Stor = stor
@@ -251,9 +266,24 @@ class BaseActionRegistry(kvix.ActionRegistry):
         self._actions: list[Action] = []
         for action_config in self.stor.data or []:
             self._actions.append(self.action_from_config(action_config))
+        self._load_transient()
+
+    def _load_transient(self) -> None:
+        self._transient_actions: list[Action] = []
+        for _, path in get_files_in_dir(get_data_dir().joinpath("actions.d")):
+            stor = YamlFile(path)
+            stor.load()
+            for action_config in stor.data or []:
+                action = self.action_from_config(action_config)
+                self._transient_actions.append(action)
+                self._actions.append(action)
 
     def save(self) -> None:
-        self.stor.data = [action.to_config() for action in self.actions]
+        self.stor.data = [
+            action.to_config()
+            for action in self.actions
+            if (action not in self._transient_actions)
+        ]
         self.stor.save()
 
     def add_action_type(self, action_type: ActionType) -> None:

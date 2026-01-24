@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from typing import Any, Callable, Sequence, cast, Tuple
+
 
 import pkg_resources
 import pyclip
@@ -6,13 +9,12 @@ from PIL import Image, ImageTk
 
 import kvix
 import kvix.impl
-import kvix.ui
 import kvix.ui.tk.uni.classic as uni
 from kvix import Item, ItemAlt, ItemSource
 from kvix.conf import Conf
 from kvix.impl import BaseSelector, BaseUi, EmptyItemSource, cancel_text, ok_text
 from kvix.l10n import _
-
+from kvix.util import Propty
 from .util import find_all_children
 
 style_config_item_title_text = _('Theme ("dark" or "light")').setup(
@@ -399,6 +401,7 @@ class Dialog(kvix.Dialog, ModalWindow):
 
         self.builder = DialogBuilder(data_frame)
         self.create_dialog(self.builder)
+        self.builder._do_build()
         children = data_frame.winfo_children()
         if len(children) >= 2:
             self._first_entry = children[1]
@@ -441,21 +444,74 @@ class Dialog(kvix.Dialog, ModalWindow):
 
 
 class DialogEntry(kvix.DialogEntry):
-    def __init__(self, label: uni.Label, string_var: uni.StringVar):
-        self._label = label
-        self._string_var = string_var
 
-    def set_title(self, text: str):
-        self._label.config(text=text)
+    title = Propty(str, on_change="_on_title_change")
+    value = Propty(str, on_change="_on_value_change")
+    alternatives = Propty(list, on_change="_on_alternatives_change")
+    editable = Propty(str, on_change="_on_editable_change")
 
-    def get_value(self):
-        return self._string_var.get()
-
-    def set_value(self, value):
-        self._string_var.set(value)
+    def __init__(self, parent: DialogBuilder):
+        self._parent = parent
+        self._string_var = None
+        self._label = None
+        self._value_listeners = []
+        self._entry = None
 
     def on_change(self, func: callable):
-        self._string_var.trace_add("write", lambda *args, **kwargs: func(self._string_var.get()))
+        self._value_listeners.append(func)
+
+    def _on_value_change(self, value: str):
+        if self._string_var:
+            self._string_var.set(value)
+        for listener in self._value_listeners:
+            listener(value)
+
+    def _on_title_change(self, title: str):
+        if self._label:
+            self._label.configure(text=title)
+
+    def _on_alternatives_change(self, alternatives: list[str]):
+        if self._entry:
+            raise NotImplementedError("change alternatives after create not supported")
+
+    def _on_editable_change(self, editable: bool):
+        if self._entry:
+            raise NotImplementedError("change editable after create not supported")
+
+    def _do_build(self):
+        self._parent._root_frame.columnconfigure(0, weight=1)
+
+        self._label = uni.Label(self._parent._root_frame, text=self.title)
+        self._label.grid(column=0, row=self._parent._widget_count, sticky="ew")
+        self._parent._widget_count += 1
+
+        self._string_var = uni.StringVar(self._parent._root_frame)
+        if self.value:
+            self._string_var.set(self.value)
+
+        def set_value(value):
+            self.value = value
+
+        self._string_var.trace_add(
+            "write", lambda *args, **kwargs: set_value(self._string_var.get())
+        )
+        if not self.alternatives:
+            self._entry = uni.Entry(self._parent._root_frame, textvariable=self._string_var)
+        else:
+            self._entry = uni.Combobox(
+                self._parent._root_frame,
+                textvariable=self._string_var,
+                values=self._alternatives,
+                state="readonly",
+            )
+        self._entry.grid(column=0, row=self._parent._widget_count, sticky="ew")
+        self._parent._widget_count += 1
+        if self._parent._widget_count == 2:
+            self._entry.focus_set()
+
+        separator = uni.Label(self._parent._root_frame, text="")
+        separator.grid(column=0, row=self._parent._widget_count, sticky="ew")
+        self._parent._widget_count += 1
 
 
 class DialogBuilder(kvix.DialogBuilder):
@@ -464,22 +520,9 @@ class DialogBuilder(kvix.DialogBuilder):
         self._root_frame = root_frame
         self._widget_count = 0
 
-    def create_entry(self, id: str, title: str) -> DialogEntry:
-        self._root_frame.columnconfigure(0, weight=1)
+    def _instantiate_entry(self) -> DialogEntry:
+        return DialogEntry(self)
 
-        label = uni.Label(self._root_frame, text=title)
-        label.grid(column=0, row=self._widget_count, sticky="ew")
-        self._widget_count += 1
-
-        string_var = uni.StringVar(self._root_frame)
-        entry = uni.Entry(self._root_frame, textvariable=string_var)
-        entry.grid(column=0, row=self._widget_count, sticky="ew")
-        self._widget_count += 1
-        if self._widget_count == 2:
-            entry.focus_set()
-
-        separator = uni.Label(self._root_frame, text="")
-        separator.grid(column=0, row=self._widget_count, sticky="ew")
-        self._widget_count += 1
-
-        return cast(DialogEntry, self._add_widget(id, DialogEntry(label, string_var)))
+    def _do_build(self):
+        for entry in self._entries.values():
+            entry._do_build()

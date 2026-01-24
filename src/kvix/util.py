@@ -190,7 +190,7 @@ class Propty(Generic[T]):  # todo move to separate module
         value_predicate: Callable[[T], bool] = lambda x: x and True or False,
         # change notification
         on_change: str | bool | Callable[[Any, T], None] = False,
-        comparator: Callable[[T, T], bool] = lambda a, b: True,
+        comparator: Callable[[T, T], bool] = lambda a, b: a == b,
         #
         type_check: bool = False,
         writeable: bool = True,
@@ -340,3 +340,18 @@ def apply_template(template: str, value_dict: dict[str, str] = {}, **value_kwarg
     values.update(value_dict)
     values.update(value_kwargs)
     return jinja2.Template(template).render(**values)
+
+
+if "HOME" in os.environ:
+    env_home = os.environ["HOME"]
+
+    def compact_home(value: str):
+        if not value:
+            return value
+        if value.startswith(env_home):
+            return "~" + str(value)[len(env_home) :]
+
+else:
+
+    def compact_home(value: str):
+        return value

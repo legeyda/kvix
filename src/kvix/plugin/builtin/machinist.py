@@ -44,24 +44,24 @@ class MachinistActionType(BaseActionType):
         return Machinist(self, value["text"], value.get("title"), value.get("description"))
 
     def create_editor(self, builder: DialogBuilder) -> None:
-        builder.create_entry("text", str(text_text))
+        text_entry = builder.create_entry("text", str(text_text))
         super().create_editor(builder)
 
         def load(value: Any | None):
             if isinstance(value, Machinist):
-                builder.widget("text").set_value(value.text)
+                text_entry.value = value.text
 
         builder.on_load(load)
 
         def save(value: Any | None = {}) -> Any:
             if isinstance(value, Machinist):
-                value.text = builder.widget("text").get_value()
+                value.text = text_entry.value
             else:
                 value = Machinist(
                     self.context.action_registry.action_types["machinist"],
-                    builder.widget("text").get_value(),
-                    builder.widget("title").get_value(),
-                    builder.widget("description").get_value(),
+                    builder.get_entry("text").get_value(),
+                    builder.get_entry("title").get_value(),
+                    builder.get_entry("description").get_value(),
                 )
             return value
 

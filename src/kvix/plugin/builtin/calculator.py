@@ -23,12 +23,12 @@ class Action(BaseMachinist):
         if len(query) < 3:
             return []
         match = self._pattern and re.compile(self._pattern).match(query)
+
+        if not match and not query.startswith("="):
+            return []
+        if query.startswith("="):
+            query = query[1:]
         result = self._evaluate(query)
-        if not result:
-            if match:
-                result = str(expression_error_text)
-            else:
-                return []
         return [
             BaseItem(
                 apply_template(str(item_title_text), {"value": result}),
@@ -47,8 +47,8 @@ class Action(BaseMachinist):
             # todo remove spaces between digits
             # todo remove commas as three digits separator
             return str(eval(query, math_functions, {}))
-        except Exception:
-            return ""
+        except Exception as e:
+            return str(e)
 
 
 class Plugin(BasePlugin):
@@ -61,6 +61,7 @@ class Plugin(BasePlugin):
         )
 
     def get_actions(self) -> Sequence[kvix.Action]:
+        # "|".join({key for key in dir(math) if not key.startswith("_")})
         return [
             Action(
                 self._single_action_type,

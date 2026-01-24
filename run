@@ -79,7 +79,7 @@ run_flatpak() {
 	run_flatpak_target="$target"/flatpak
 	rm -rf "$run_flatpak_target"/wheel
 	mkdir -p "$run_flatpak_target"/wheel
-	python -m build --wheel --outdir="$run_flatpak_target"/wheel
+	uv tool run --from=build --with requirements-parser pyproject-build --wheel --outdir="$run_flatpak_target"/wheel
 	kvix_wheel_file=$(ls "$run_flatpak_target"/wheel)
 
 	# apply manifest template
@@ -87,6 +87,8 @@ run_flatpak() {
 			> "$run_flatpak_target"/manifest.yaml
 
 	# generate dependency module
+	# todo flatpak install org.freedesktop.Sdk//25.08 # Runtime org.freedesktop.Sdk//25.08 not found for user or system
+	# todo flatpak install org.flatpak.Builder
 	run_flatpak_pip_generator \
 			--runtime='org.freedesktop.Sdk//25.08' \
  			--pyproject-file=pyproject.toml \
@@ -111,7 +113,7 @@ run_flatpak_pip_generator() {
 		curl --fail --silent --show-error --location --output "$run_flatpak_pip_generator_script" \
 				'https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/refs/heads/master/pip/flatpak-pip-generator.py'
 	fi
-	python3 "$run_flatpak_pip_generator_script" "$@"
+	uv run --with=requirements-parser --no-project "$run_flatpak_pip_generator_script" "$@"
 	unset run_flatpak_pip_generator_script
 }
 
