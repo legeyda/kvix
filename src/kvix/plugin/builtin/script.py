@@ -14,7 +14,7 @@ from kvix.impl import (
     BaseItemAlt,
     execute_text,
 )
-from kvix.util import get_data_dir, compact_home
+from kvix.util import get_data_dir, compact_home, expand_home
 
 from kvix import ActionType, Context, Item, Action
 from pathlib import Path
@@ -55,7 +55,7 @@ def scan_dir(path: str) -> Iterator[str]:
         return
     if not os.path.isdir(p):
         return
-    for item in os.scandir(Path(path)):
+    for item in os.scandir(Path(p)):
         if item.is_file() and os.access(item, os.X_OK):
             yield item.path
 
@@ -117,6 +117,7 @@ class ScriptAction(BaseAction):
         )
 
     def run_script(self, path: str, query: str) -> None:
+        self.action_type.context.ui.hide()
         try:
             subprocess.Popen(
                 [path],

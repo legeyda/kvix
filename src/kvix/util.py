@@ -351,7 +351,15 @@ if "HOME" in os.environ:
         if value.startswith(env_home):
             return "~" + str(value)[len(env_home) :]
 
+    def expand_home(value: str):
+        if value and value.startswith("~"):
+            return env_home + str(value)[1:]
+        return value
+
 else:
 
     def compact_home(value: str):
+        return value
+
+    def expand_home(value: str):
         return value

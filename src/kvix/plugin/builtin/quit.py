@@ -4,7 +4,11 @@ from kvix.l10n import _
 from typing import Any, Sequence
 
 quit_title_text = _("Quit kvix").setup(ru_RU="Выключить kvix", de_DE="kvix ausschalten")
+
 quit_description = " | ".join([quit_title_text.default] + list(quit_title_text.l10ns.values()))
+quit_description += (
+    "// exit quit shutdown close выход закрыть выключить отключить ausschalten schliessen"
+)
 
 
 class QuitAction(BaseAction):
